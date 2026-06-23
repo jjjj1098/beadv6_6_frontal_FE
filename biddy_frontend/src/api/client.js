@@ -19,7 +19,15 @@ export async function apiRequest(path, { method = "GET", body, headers = {} } = 
   })
 
   const text = await res.text()
-  const data = text ? JSON.parse(text) : null
+  let data = null
+
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = { message: text }
+    }
+  }
 
   if (!res.ok) {
     throw new Error(data?.message || data?.error || "요청 처리 중 오류가 발생했습니다.")
