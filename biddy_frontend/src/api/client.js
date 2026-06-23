@@ -1,7 +1,3 @@
-// Lightweight API client wrapper.
-// Right now it only simulates network latency over mock data, but it is shaped
-// so that swapping to a real `fetch` later is trivial.
-
 export const API_BASE_URL = "/api"
 
 // Builds the headers for an authenticated request.
@@ -13,6 +9,23 @@ export function getAuthHeaders(extra = {}) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...extra,
   }
+}
+
+export async function apiRequest(path, { method = "GET", body, headers = {} } = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: getAuthHeaders(headers),
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : null
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "요청 처리 중 오류가 발생했습니다.")
+  }
+
+  return data
 }
 
 // Simulates an async API response with a small delay.
