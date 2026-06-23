@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom"
-import { ChevronLeft, ShoppingCart, Bell } from "lucide-react"
+import { ChevronLeft, ShoppingCart, Bell, LogOut } from "lucide-react"
+import { useAuth } from "../contexts/AuthContext"
 
 export default function Header({ title, showBack = false, showCart = true, right = null }) {
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-30 bg-dark text-dark-foreground">
@@ -41,6 +43,13 @@ export default function Header({ title, showBack = false, showCart = true, right
                 className="grid h-9 w-9 place-items-center rounded-full hover:bg-graydark"
               >
                 <ShoppingCart size={20} />
+              </button>
+              <button
+                onClick={logout}
+                aria-label="로그아웃"
+                className="grid h-9 w-9 place-items-center rounded-full hover:bg-graydark"
+              >
+                <LogOut size={19} />
               </button>
             </>
           )}
