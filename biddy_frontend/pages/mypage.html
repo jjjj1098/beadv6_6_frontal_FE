@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이페이지 — Biddy</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; gap: 0; }
+    .tab-btn { padding: 0.65rem 1.25rem; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+  <script src="https://js.tosspayments.com/v1/payment"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="../index.html">bid<span style="color:var(--accent)">dy</span></a>
+    <div class="nav-links">
+      <span id="navNickname" class="text-muted" style="font-size:0.875rem;"></span>
+      <button class="btn btn-secondary" style="padding:0.4rem 1rem;font-size:0.85rem;" onclick="logout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <div class="container wide">
+    <div class="card mt-3">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('info', this)">내 정보</button>
+        <button class="tab-btn" onclick="switchTab('security', this)">보안</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-info">
+        <div id="infoLoading" class="text-muted">불러오는 중...</div>
+        <div id="infoContent" style="display:none;">
+          <div id="infoRows"></div>
+          
+          <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+            <div class="card-title" style="font-size:1.1rem;margin-bottom:1rem;">예치금 관리</div>
+            <div class="info-row">
+              <span class="info-label">현재 잔액</span>
+              <span class="info-value" id="balanceValue" style="font-weight:700; color:var(--accent);">0원</span>
+            </div>
+            <div class="alert" id="balanceAlert"></div>
+            <div class="flex" style="margin-top:10px;">
+              <div class="flex-1">
+                <input type="number" id="chargeAmount" placeholder="충전할 금액">
+              </div>
+              <button class="btn btn-secondary" onclick="handleCharge()">충전하기</button>
+            </div>
+          </div>
+
+          <div style="margin-top:1.5rem;">
+            <div class="card-title" style="font-size:1.1rem;margin-bottom:1rem;">닉네임 변경</div>
+            <div class="alert" id="infoAlert"></div>
+            <div class="flex">
+              <div class="flex-1"><input type="text" id="newNickname" placeholder="새 닉네임"></div>
+              <button class="btn btn-secondary" onclick="handleUpdateNickname()">변경</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-security">
+        <div class="card-title" style="font-size:1.1rem;margin-bottom:1rem;">비밀번호 변경</div>
+        <div class="alert" id="securityAlert"></div>
+        <div class="form-group"><label>현재 비밀번호</label><input type="password" id="currentPassword"></div>
+        <div class="form-group"><label>새 비밀번호</label><input type="password" id="newPassword"></div>
+        <div class="form-group"><label>새 비밀번호 확인</label><input type="password" id="newPasswordConfirm"></div>
+        <button class="btn btn-primary" id="pwBtn" onclick="handleChangePassword()">비밀번호 변경</button>
+        <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+          <div class="card-title" style="font-size:1rem;color:var(--danger);margin-bottom:0.5rem;">회원 탈퇴</div>
+          <button class="btn btn-danger" onclick="handleWithdraw()">계정 탈퇴</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/member.js"></script>
+  <script src="../js/payment.js"></script>
+  <script>
+    redirectIfNotLoggedIn();
+
+    function switchTab(tab, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(`panel-${tab}`).classList.add('active');
+      if (tab === 'info') loadInfo();
+    }
+
+    async function loadInfo() {
+      try {
+        // 1. 유저 정보 먼저 가져오기 (userId를 얻기 위해)
+        const userData = await getMyInfo();
+        
+        // 2. paymentApi를 사용하여 해당 유저의 잔액 조회
+        // payment.js에 정의된 paymentApi.getBalance 사용
+        const balanceData = await paymentApi.getBalance(userData.id);
+
+        document.getElementById('navNickname').textContent = userData.nickname;
+        
+        // 3. 잔액 표시 (balanceData.balance가 없을 경우 0 처리)
+        const balance = (balanceData && typeof balanceData.balance === 'number') ? balanceData.balance : 0;
+        document.getElementById('balanceValue').textContent = formatMoney(balance);
+
+        document.getElementById('infoRows').innerHTML = `
+          <div class="info-row"><span class="info-label">이메일</span><span class="info-value">${userData.email}</span></div>
+          <div class="info-row"><span class="info-label">닉네임</span><span class="info-value">${userData.nickname}</span></div>
+          <div class="info-row"><span class="info-label">가입일</span><span class="info-value">${new Date(userData.createdAt).toLocaleDateString('ko-KR')}</span></div>
+        `;
+        
+        document.getElementById('infoLoading').style.display = 'none';
+        document.getElementById('infoContent').style.display = 'block';
+      } catch (err) { 
+        console.error("정보 로드 실패:", err);
+        document.getElementById('infoLoading').textContent = '정보를 불러오지 못했습니다.'; 
+      }
+    }
+
+    async function handleCharge() {
+  const amount = Number(document.getElementById('chargeAmount').value);
+  const alertEl = document.getElementById('balanceAlert');
+
+  if (!amount || amount <= 0) return showAlert(alertEl, '올바른 금액을 입력하세요.');
+
+  // 일반 API 연동 정보에 있는 'test_ck_...' 키를 넣으세요
+  const clientKey = "test_ck_vZnjEJeQVxbO900YJqKz8PmOoBN0"; 
+  const tossPayments = TossPayments(clientKey);
+
+  try {
+    // 결제창 즉시 호출 (widgets 방식 아님)
+    await tossPayments.requestPayment('카드', {
+      amount: amount,
+      orderId: 'ORDER_' + Date.now(),
+      orderName: '예치금 충전',
+      customerName: '고객명',
+      successUrl: window.location.origin + '/pages/success.html',
+      failUrl: window.location.origin + '/pages/fail.html',
+    });
+  } catch (err) {
+    console.error(err);
+    showAlert(alertEl, '결제 요청 실패: ' + err.message);
+  }
+}
+
+    async function handleUpdateNickname() {
+      const alertEl = document.getElementById('infoAlert');
+      const nickname = document.getElementById('newNickname').value.trim();
+      if (!nickname) return showAlert(alertEl, '닉네임을 입력하세요.');
+
+      try {
+        await updateMyInfo({ nickname });
+        showAlert(alertEl, '닉네임이 변경되었습니다.', 'success');
+        loadInfo();
+        document.getElementById('newNickname').value = '';
+      } catch (err) {
+        showAlert(alertEl, err.message);
+      }
+    }
+
+    // ===== 비밀번호 변경 =====
+    async function handleChangePassword() {
+      const alertEl = document.getElementById('securityAlert');
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const newPasswordConfirm = document.getElementById('newPasswordConfirm').value;
+
+      if (!currentPassword || !newPassword) return showAlert(alertEl, '모든 항목을 입력하세요.');
+      if (newPassword !== newPasswordConfirm) return showAlert(alertEl, '새 비밀번호가 일치하지 않습니다.');
+      if (newPassword.length < 8) return showAlert(alertEl, '비밀번호는 8자 이상이어야 합니다.');
+
+      const btn = document.getElementById('pwBtn');
+      setLoading(btn, true);
+
+      try {
+        await changePassword({ currentPassword, newPassword });
+        showAlert(alertEl, '비밀번호가 변경되었습니다. 다시 로그인해주세요.', 'success');
+        setTimeout(() => {
+          Auth.clear();
+          location.href = 'login.html';
+        }, 2000);
+      } catch (err) {
+        showAlert(alertEl, err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    // ===== 회원 탈퇴 =====
+    async function handleWithdraw() {
+      if (!confirm('정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+      try {
+        await withdraw();
+        Auth.clear();
+        location.href = '../index.html';
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // 초기 로드
+    loadInfo();
+  </script>
+</body>
+</html>

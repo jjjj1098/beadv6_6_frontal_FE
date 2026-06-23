@@ -1,0 +1,18 @@
+<main class="container">
+  <h1>💳 결제하기</h1>
+  <div class="order-summary">
+    </div>
+  <button onclick="processPayment()" class="btn btn-primary">결제 완료</button>
+</main>
+
+<script>
+  async function onPayment(orderId, amount) {
+  const result = await paymentApi.create(orderId, amount);
+  console.log('결제 ID:', result.data.id);
+}
+
+async function onCancel(paymentId, reason) {
+  await paymentApi.cancel(paymentId, reason);
+  alert('취소되었습니다.');
+}
+</script>

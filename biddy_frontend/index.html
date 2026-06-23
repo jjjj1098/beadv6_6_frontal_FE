@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biddy — 중고거래 플랫폼</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 56px); text-align: center; padding: 2rem; gap: 1.5rem; }
+    .hero-badge { display: inline-block; padding: 0.3rem 0.9rem; background: rgba(108,99,255,0.15); color: var(--accent); border: 1px solid rgba(108,99,255,0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .hero-title { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+    .hero-title span { color: var(--accent); }
+    .hero-desc { color: var(--text-muted); font-size: 1.05rem; max-width: 400px; }
+    .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-logo">bid<span>dy</span></div>
+    <div class="nav-links" id="navLinks">
+      <a href="pages/product.html">상품목록</a>
+      <a href="pages/login.html">로그인</a>
+      <a href="pages/signup.html" class="btn btn-primary">시작하기</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="hero-badge">🛍 중고거래 커머스 플랫폼</div>
+    <h1 class="hero-title">믿고 거래하는<br><span>Biddy</span></h1>
+    <p class="hero-desc">중고 상품을 경매로 거래하고, 안전한 예치금 시스템으로 결제하세요.</p>
+    <div class="hero-actions">
+      <a href="pages/signup.html" class="btn btn-primary">회원가입</a>
+      <a href="pages/login.html" class="btn btn-secondary">로그인</a>
+    </div>
+  </main>
+
+  <script src="js/member.js"></script>
+  <script>
+    async function initNavbar() {
+      const navLinksEl = document.getElementById('navLinks');
+
+      if (Auth.isLoggedIn()) {
+        try {
+          const res = await fetch('http://localhost:8000/api/members/me', {
+            headers: { 'Authorization': `Bearer ${Auth.getAccessToken()}` }
+          });
+          
+          if (!res.ok) throw new Error("유저 정보 로드 실패");
+          const user = await res.json();
+
+          // 로그인 후 메뉴 구성
+          let menuHtml = `
+            <a href="pages/product.html">상품목록</a>
+            <a href="pages/cart.html">장바구니</a>
+            <a href="pages/order.html">주문내역</a>
+            <a href="pages/wallet.html">지갑</a>
+            <a href="pages/mypage.html">마이페이지</a>
+            <button class="btn btn-secondary" onclick="logout()">로그아웃</button>
+          `;
+
+          // 관리자일 경우 관리자 페이지 추가
+          if (user.role === 'ADMIN') {
+            menuHtml = `<a href="pages/admin.html" style="color: #ff5050; font-weight: 700;">⚙️ 관리자</a>` + menuHtml;
+          }
+
+          navLinksEl.innerHTML = menuHtml;
+        } catch (err) {
+          console.error("인증 오류:", err);
+          if (typeof Auth.clear === 'function') Auth.clear();
+        }
+      }
+    }
+
+    initNavbar();
+  </script>
+</body>
+</html>

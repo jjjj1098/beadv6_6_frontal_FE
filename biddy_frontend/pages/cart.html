@@ -1,0 +1,25 @@
+<main>
+  <h1>🛒 장바구니</h1>
+  <div id="cartList"></div>
+</main>
+
+<script src="../js/api.js"></script>
+<script>
+  async function loadCart() {
+    const items = await api.request('/cart/list');
+    const container = document.getElementById('cartList');
+    container.innerHTML = items.map(item => `
+      <div>
+        ${item.productName} 
+        <button onclick="deleteItem(${item.id})">삭제</button>
+      </div>
+    `).join('');
+  }
+
+  async function deleteItem(id) {
+    await api.request(`/cart/delete?cartId=${id}`, { method: 'DELETE' });
+    loadCart(); // 새로고침
+  }
+
+  loadCart();
+</script>

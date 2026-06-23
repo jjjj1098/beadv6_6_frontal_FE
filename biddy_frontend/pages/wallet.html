@@ -1,0 +1,24 @@
+<main class="container">
+  <h1>💰 내 지갑</h1>
+  <div class="balance-card">
+    <h3>현재 잔액</h3>
+    <p id="balanceDisplay">로딩 중...</p>
+    <input type="number" id="chargeAmount" placeholder="충전 금액">
+    <button onclick="handleCharge()" class="btn btn-primary">충전하기</button>
+  </div>
+</main>
+
+<script>
+  async function refreshWallet() {
+  const userId = localStorage.getItem('userId');
+  const balanceData = await depositApi.getBalance(userId);
+  document.getElementById('balance').innerText = formatMoney(balanceData.balance);
+}
+
+async function onCharge() {
+  const amount = document.getElementById('amountInput').value;
+  await depositApi.charge(amount);
+  alert('충전 완료');
+  refreshWallet();
+}
+</script>

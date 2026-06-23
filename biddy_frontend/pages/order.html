@@ -1,0 +1,17 @@
+<main>
+  <h1>주문 상세</h1>
+  <button id="payBtn">결제하기</button>
+</main>
+
+<script src="../js/api.js"></script>
+<script>
+  const orderId = new URLSearchParams(window.location.search).get('orderId');
+
+  document.getElementById('payBtn').onclick = async () => {
+    // OrderPaymentController의 PATCH 호출
+    const result = await api.request(`/api/orders/${orderId}/payment-processing`, {
+      method: 'PATCH'
+    });
+    alert('결제 처리 상태: ' + result.status);
+  };
+</script>

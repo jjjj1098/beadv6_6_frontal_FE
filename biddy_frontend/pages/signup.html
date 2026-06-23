@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 — Biddy</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .email-row { display: flex; gap: 0.5rem; }
+    .email-row input { flex: 1; }
+    .email-row .btn { white-space: nowrap; padding: 0.65rem 1rem; }
+
+    .verify-group { display: none; }
+    .verify-group.show { display: block; }
+
+    .step-fields { display: none; }
+    .step-fields.show { display: block; }
+
+    .verified-badge {
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--success);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 0.4rem;
+    }
+    .verified-badge.show { display: flex; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="../index.html">bid<span style="color:var(--accent)">dy</span></a>
+    <div class="nav-links">
+      <span class="text-muted">이미 계정이 있으신가요?</span>
+      <a href="login.html">로그인</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card mt-3">
+      <div class="card-title">회원가입</div>
+      <div class="card-subtitle">Biddy 계정을 만들어보세요</div>
+
+      <div class="alert" id="alert"></div>
+
+      <!-- Step 1: 이메일 인증 -->
+      <div class="form-group">
+        <label for="email">이메일</label>
+        <div class="email-row">
+          <input type="email" id="email" placeholder="example@email.com">
+          <button class="btn btn-secondary" id="sendBtn" onclick="handleSendEmail()">인증 발송</button>
+        </div>
+        <div class="verified-badge" id="verifiedBadge">✓ 이메일 인증 완료</div>
+      </div>
+
+      <!-- 인증 토큰 입력 -->
+      <div class="form-group verify-group" id="verifyGroup">
+        <label for="token">인증 코드</label>
+        <div class="email-row">
+          <input type="text" id="token" placeholder="이메일로 받은 인증 코드 입력">
+          <button class="btn btn-secondary" id="verifyBtn" onclick="handleVerifyEmail()">확인</button>
+        </div>
+        <div class="text-muted mt-1">인증 코드는 10분 후 만료됩니다.</div>
+      </div>
+
+      <!-- Step 2: 나머지 정보 (인증 완료 후 표시) -->
+      <div class="step-fields" id="stepFields">
+        <div class="form-group">
+          <label for="nickname">닉네임</label>
+          <input type="text" id="nickname" placeholder="2자 이상 50자 이하">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">전화번호</label>
+          <input type="tel" id="phone" placeholder="01012345678 (숫자만)">
+        </div>
+
+        <div class="form-group">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" placeholder="8자 이상">
+        </div>
+
+        <div class="form-group">
+          <label for="passwordConfirm">비밀번호 확인</label>
+          <input type="password" id="passwordConfirm" placeholder="비밀번호 재입력">
+        </div>
+
+        <button class="btn btn-primary mt-2" id="submitBtn" onclick="handleSignUp()">
+          가입하기
+        </button>
+      </div>
+
+      <div class="text-center text-muted mt-2">
+        가입 시 서비스 <a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의합니다.
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/member.js"></script>
+  <script>
+    redirectIfLoggedIn();
+
+    let emailVerified = false;
+
+    // 인증 메일 발송
+    async function handleSendEmail() {
+      const alertEl = document.getElementById('alert');
+      const email = document.getElementById('email').value.trim();
+      const btn = document.getElementById('sendBtn');
+
+      if (!email) return showAlert(alertEl, '이메일을 입력해주세요.');
+
+      hideAlert(alertEl);
+      setLoading(btn, true);
+
+      try {
+        await apiCall('POST', '/members/email/send', { email });
+        document.getElementById('verifyGroup').classList.add('show');
+        document.getElementById('email').disabled = true;
+        showAlert(alertEl, '인증 코드가 발송되었습니다. 서버 콘솔에서 확인하세요.', 'success');
+      } catch (err) {
+        showAlert(alertEl, err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    // 이메일 인증 확인
+    async function handleVerifyEmail() {
+      const alertEl = document.getElementById('alert');
+      const email = document.getElementById('email').value.trim();
+      const token = document.getElementById('token').value.trim();
+      const btn = document.getElementById('verifyBtn');
+
+      if (!token) return showAlert(alertEl, '인증 코드를 입력해주세요.');
+
+      hideAlert(alertEl);
+      setLoading(btn, true);
+
+      try {
+        await apiCall('GET', `/members/email/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
+        emailVerified = true;
+        document.getElementById('verifyGroup').classList.remove('show');
+        document.getElementById('verifiedBadge').classList.add('show');
+        document.getElementById('stepFields').classList.add('show');
+        document.getElementById('sendBtn').disabled = true;
+        showAlert(alertEl, '이메일 인증이 완료되었습니다. 나머지 정보를 입력해주세요.', 'success');
+      } catch (err) {
+        showAlert(alertEl, err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    // 회원가입
+    async function handleSignUp() {
+      const alertEl = document.getElementById('alert');
+      const btn = document.getElementById('submitBtn');
+
+      if (!emailVerified) return showAlert(alertEl, '이메일 인증을 먼저 완료해주세요.');
+
+      const email = document.getElementById('email').value.trim();
+      const nickname = document.getElementById('nickname').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const password = document.getElementById('password').value;
+      const passwordConfirm = document.getElementById('passwordConfirm').value;
+
+      if (!nickname || !phone || !password) {
+        return showAlert(alertEl, '모든 항목을 입력해주세요.');
+      }
+      if (!/^\d{10,11}$/.test(phone)) {
+        return showAlert(alertEl, '전화번호는 숫자 10~11자리로 입력해주세요.');
+      }
+      if (password.length < 8) {
+        return showAlert(alertEl, '비밀번호는 8자 이상이어야 합니다.');
+      }
+      if (password !== passwordConfirm) {
+        return showAlert(alertEl, '비밀번호가 일치하지 않습니다.');
+      }
+
+      hideAlert(alertEl);
+      setLoading(btn, true);
+
+      try {
+        await signUp({ email, password, nickname, phone });
+        showAlert(alertEl, '회원가입 완료! 로그인 페이지로 이동합니다.', 'success');
+        setTimeout(() => location.href = 'login.html', 1500);
+      } catch (err) {
+        showAlert(alertEl, err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+  </script>
+</body>
+</html>
