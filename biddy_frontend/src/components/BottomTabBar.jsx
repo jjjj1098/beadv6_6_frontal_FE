@@ -1,8 +1,9 @@
 import { NavLink } from "react-router-dom"
-import { Home, PlusCircle, ShoppingCart, Wallet } from "lucide-react"
+import { Home, Package, PlusCircle, ShoppingCart, Wallet } from "lucide-react"
 
 const tabs = [
-  { to: "/products", label: "홈", icon: Home },
+  { to: "/", label: "홈", icon: Home },
+  { to: "/products", label: "상품", icon: Package },
   { to: "/cart", label: "장바구니", icon: ShoppingCart },
   { to: "/products/create", label: "등록", icon: PlusCircle },
   { to: "/wallet", label: "지갑", icon: Wallet },

@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState } from "react"
 import { login as loginApi, logoutRequest, signup as signupApi } from "../api/authApi"
+import { decodeJwtPayload } from "../lib/jwt"
 
 const AuthContext = createContext(null)
 
@@ -39,15 +40,27 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const user = useMemo(() => {
+    if (!accessToken) return null
+    const payload = decodeJwtPayload(accessToken)
+    if (!payload) return null
+    return {
+      id: payload.sub ?? payload.memberId,
+      role: payload.role ?? null,
+    }
+  }, [accessToken])
+
   const value = useMemo(
     () => ({
       isAuthenticated: Boolean(accessToken),
+      isAdmin: user?.role === "ADMIN",
       accessToken,
+      user,
       login,
       signup,
       logout,
     }),
-    [accessToken],
+    [accessToken, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

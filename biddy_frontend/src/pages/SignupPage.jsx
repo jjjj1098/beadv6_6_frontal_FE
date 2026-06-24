@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
-import { UserPlus } from "lucide-react"
+import { UserPlus, Mail, CheckCircle2 } from "lucide-react"
 import PageContainer from "../components/PageContainer"
 import { Field, TextInput } from "../components/FormField"
 import { useAuth } from "../contexts/AuthContext"
+import { sendVerificationEmail, verifyEmail } from "../api/authApi"
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -17,11 +18,61 @@ export default function SignupPage() {
   const [error, setError] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
+  // 이메일 인증 상태
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [verificationToken, setVerificationToken] = useState("")
+  const [emailSending, setEmailSending] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [emailMsg, setEmailMsg] = useState("")
+
   const update = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))
+
+  const handleSendVerification = async () => {
+    if (!form.email) {
+      setEmailMsg("이메일을 먼저 입력해 주세요.")
+      return
+    }
+    setEmailMsg("")
+    setEmailSending(true)
+    try {
+      await sendVerificationEmail(form.email)
+      setEmailSent(true)
+      setEmailMsg("인증 코드를 전송했습니다. 이메일을 확인해 주세요.")
+    } catch (err) {
+      setEmailMsg(err.message)
+    } finally {
+      setEmailSending(false)
+    }
+  }
+
+  const handleVerifyToken = async () => {
+    if (!verificationToken) {
+      setEmailMsg("인증 코드를 입력해 주세요.")
+      return
+    }
+    setEmailMsg("")
+    setVerifying(true)
+    try {
+      await verifyEmail({ email: form.email, token: verificationToken })
+      setEmailVerified(true)
+      setEmailMsg("이메일 인증이 완료되었습니다.")
+    } catch (err) {
+      setEmailMsg(err.message)
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+
+    if (!emailVerified) {
+      setError("이메일 인증을 먼저 완료해 주세요.")
+      return
+    }
+
     setSubmitting(true)
     try {
       const normalizedPhone = form.phone.replaceAll("-", "")
@@ -59,15 +110,61 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="이메일" required>
-            <TextInput
-              value={form.email}
-              onChange={update("email")}
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              required
-            />
+            <div className="flex gap-2">
+              <TextInput
+                value={form.email}
+                onChange={(e) => {
+                  update("email")(e)
+                  setEmailVerified(false)
+                  setEmailSent(false)
+                  setEmailMsg("")
+                }}
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                disabled={emailVerified}
+                required
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={handleSendVerification}
+                disabled={emailSending || emailVerified}
+                className="flex shrink-0 items-center gap-1 rounded-xl bg-card px-3 text-sm font-semibold text-teal ring-1 ring-border disabled:opacity-50"
+              >
+                <Mail size={14} />
+                {emailVerified ? "인증완료" : emailSending ? "전송 중..." : emailSent ? "재전송" : "인증코드 받기"}
+              </button>
+            </div>
           </Field>
+
+          {emailSent && !emailVerified && (
+            <Field label="인증 코드" required>
+              <div className="flex gap-2">
+                <TextInput
+                  value={verificationToken}
+                  onChange={(e) => setVerificationToken(e.target.value)}
+                  placeholder="이메일로 받은 인증 코드"
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyToken}
+                  disabled={verifying}
+                  className="flex shrink-0 items-center gap-1 rounded-xl bg-teal px-3 text-sm font-semibold text-teal-foreground disabled:opacity-50"
+                >
+                  <CheckCircle2 size={14} />
+                  {verifying ? "확인 중..." : "확인"}
+                </button>
+              </div>
+            </Field>
+          )}
+
+          {emailMsg && (
+            <p className={`text-sm font-medium ${emailVerified ? "text-teal" : "text-muted-foreground"}`}>
+              {emailMsg}
+            </p>
+          )}
 
           <Field label="비밀번호" required hint="8자 이상">
             <TextInput
@@ -108,7 +205,7 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !emailVerified}
             className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
           >
             <UserPlus size={18} />
