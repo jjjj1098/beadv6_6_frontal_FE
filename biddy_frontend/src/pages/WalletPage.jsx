@@ -2,8 +2,9 @@ import { useEffect, useState } from "react"
 import { Wallet as WalletIcon, ArrowDownLeft, ArrowUpRight, Plus, RefreshCw } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
-import { fetchWallet, chargeDeposit } from "../api/paymentApi"
+import { fetchWallet } from "../api/paymentApi"
 import { formatDate, formatKRW } from "../lib/format"
+import { requestDepositPayment } from "../lib/tossPayments"
 
 const CHARGE_OPTIONS = [50000, 100000, 300000, 500000]
 
@@ -11,6 +12,7 @@ export default function WalletPage() {
   const [wallet, setWallet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [charging, setCharging] = useState(null)
+  const [customAmount, setCustomAmount] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -55,23 +57,24 @@ export default function WalletPage() {
   }
 
   async function handleCharge(amount) {
-    const paymentKey = window.prompt("Toss 결제 승인 후 받은 paymentKey를 입력하세요.")
-    if (!paymentKey) return
-
-    const orderId = window.prompt("Toss 결제 승인에 사용한 orderId를 입력하세요.")
-    if (!orderId) return
-
+    if (!Number.isSafeInteger(amount) || amount < 1000) {
+      setError("충전 금액은 1,000원 이상 입력해주세요.")
+      return
+    }
     setCharging(amount)
     setError("")
     try {
-      await chargeDeposit({ amount, paymentKey, orderId })
-      await refreshWallet()
+      await requestDepositPayment(amount)
     } catch (err) {
-      setError(err.message)
+      if (err.code !== "USER_CANCEL") {
+        setError(err.message)
+      }
     } finally {
       setCharging(null)
     }
   }
+
+  const normalizedCustomAmount = Number(customAmount)
 
   if (loading && !wallet) {
     return (
@@ -151,6 +154,36 @@ export default function WalletPage() {
                   )}
                 </button>
               ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <input
+                  type="number"
+                  min="1000"
+                  step="1000"
+                  inputMode="numeric"
+                  value={customAmount}
+                  onChange={(event) => setCustomAmount(event.target.value)}
+                  placeholder="직접 금액 입력"
+                  className="h-12 w-full rounded-xl bg-card px-3.5 pr-9 text-sm text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-teal"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  원
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCharge(normalizedCustomAmount)}
+                disabled={
+                  charging != null ||
+                  customAmount.trim() === "" ||
+                  !Number.isSafeInteger(normalizedCustomAmount) ||
+                  normalizedCustomAmount < 1000
+                }
+                className="h-12 shrink-0 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground disabled:opacity-50"
+              >
+                충전하기
+              </button>
             </div>
           </div>
 
