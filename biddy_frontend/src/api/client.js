@@ -1,4 +1,4 @@
-export const API_BASE_URL = "http://localhost:8000/api"
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api"
 
 // Builds the headers for an authenticated request.
 // JWT will be stored in localStorage under `accessToken` once auth is wired up.
@@ -17,8 +17,6 @@ export async function apiRequest(path, { method = "GET", body, headers = {} } = 
 
   const res = await fetch(url, {
     method,
-    mode: "cors",
-    credentials: "omit",
     headers: getAuthHeaders(headers),
     body: body ? JSON.stringify(body) : undefined,
   })
