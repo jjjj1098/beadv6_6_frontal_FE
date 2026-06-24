@@ -1,4 +1,9 @@
-import { apiRequest, mockRequest } from "./client"
+import { apiRequest } from "./client"
+
+export const PAYMENT_METHOD = {
+  WALLET: "WALLET",
+  NORMAL: "NORMAL",
+}
 
 const TRANSACTION_LABELS = {
   CHARGE: "예치금 충전",
@@ -72,8 +77,53 @@ export async function chargeDeposit({ amount, paymentKey, orderId }) {
   )
 }
 
-// Mock only. Do NOT call a real payment provider here yet.
-export function pay({ orderId, amount }) {
-  // POST /payments
-  return mockRequest("/payments", { data: { orderId, amount, status: "paid", mock: true } })
+export async function createPayment({
+  orderId,
+  amount,
+  paymentMethod = PAYMENT_METHOD.WALLET,
+  paymentKey,
+  tossOrderId,
+  pgTransactionId,
+}) {
+  return unwrapApiResponse(
+    await apiRequest("/payments", {
+      method: "POST",
+      body: {
+        orderId,
+        amount,
+        paymentMethod,
+        ...(paymentKey ? { paymentKey } : {}),
+        ...(tossOrderId ? { tossOrderId } : {}),
+        ...(pgTransactionId ? { pgTransactionId } : {}),
+      },
+    }),
+  )
+}
+
+export function pay(payment) {
+  return createPayment(payment)
+}
+
+export async function fetchPayment(paymentId) {
+  return unwrapApiResponse(await apiRequest(`/payments/${paymentId}`))
+}
+
+async function changePayment(paymentId, action, { amount, reason }) {
+  return unwrapApiResponse(
+    await apiRequest(`/payments/${paymentId}/${action}`, {
+      method: "POST",
+      body: {
+        amount,
+        reason,
+      },
+    }),
+  )
+}
+
+export function cancelPayment(paymentId, payload) {
+  return changePayment(paymentId, "cancel", payload)
+}
+
+export function refundPayment(paymentId, payload) {
+  return changePayment(paymentId, "refund", payload)
 }
