@@ -1,27 +1,115 @@
-import { mockRequest } from "./client"
-import { products } from "./mockData"
+import { apiRequest } from "./client"
 
-export function fetchProducts({ search = "", category = "전체", saleType = "all" } = {}) {
-  let result = products
-  if (saleType !== "all") result = result.filter((p) => p.type === saleType)
-  if (category && category !== "전체") result = result.filter((p) => p.category === category)
-  if (search) {
-    const q = search.toLowerCase()
-    result = result.filter((p) => p.title.toLowerCase().includes(q))
+// 백엔드(name/saleType) → 화면(title/type) 변환
+function toView(p) {
+  return {
+    id: p.id,
+    title: p.name,
+    type: p.saleType === "AUCTION" ? "auction" : "normal",
+    saleType: p.saleType,
+    category: p.category,
+    price: p.price,
+    status: p.status,
+    stock: p.stock,
+    description: p.description,
+    brand: p.brand,
+    sellerId: p.sellerId,
+    regDt: p.regDt,
+    image: p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls[0] : "/images/placeholder.png",
+    imageUrls: p.imageUrls || [],
+    liked: false,
+    seller: {
+      name: `판매자 ${p.sellerId}`,
+      rating: 0,
+      deals: 0,
+    },
   }
-  return mockRequest("/products", { data: result })
 }
 
-export function fetchProductById(id) {
-  const product = products.find((p) => p.id === id) || null
-  return mockRequest(`/products/${id}`, { data: product })
+// 화면 → 백엔드(create) 변환
+function toCreatePayload(form) {
+  return {
+    name: form.title,
+    description: form.description,
+    price: form.price,
+    stock: form.stock,
+    status: form.status,
+    category: form.category,
+    brand: form.brand ?? "",
+    saleType: form.type === "auction" ? "AUCTION" : "NORMAL",
+  }
 }
 
-export function createNormalProduct(payload) {
-  // POST /products  (Authorization header attached via client.getAuthHeaders)
-  return mockRequest("/products", { data: { id: `p_${Date.now()}`, type: "normal", ...payload } })
+// 화면 → 백엔드(update) 변환
+function toUpdatePayload(form) {
+  return {
+    name: form.title,
+    description: form.description,
+    price: form.price,
+    stock: form.stock,
+    status: form.status,
+    category: form.category,
+    brand: form.brand ?? "",
+  }
 }
 
-export function toggleLike(id) {
-  return mockRequest(`/products/${id}/like`, { data: { id, success: true } })
+// 목록 조회
+export async function fetchProducts({ saleType = "all" } = {}) {
+  const query =
+    saleType === "all" ? "" : `?saleType=${saleType === "auction" ? "AUCTION" : "NORMAL"}`
+  const list = await apiRequest(`/products${query}`)
+  return (list || []).map(toView)
+}
+
+// 단일 조회
+export async function fetchProductById(id) {
+  const p = await apiRequest(`/products/${id}`)
+  return p ? toView(p) : null
+}
+
+// 일반 상품 등록
+export async function createNormalProduct(form) {
+  const created = await apiRequest("/products", {
+    method: "POST",
+    body: toCreatePayload({ ...form, type: "normal" }),
+  })
+  return toView(created)
+}
+
+// 경매 상품 등록
+export async function createAuctionProduct(form) {
+  const created = await apiRequest("/products", {
+    method: "POST",
+    body: toCreatePayload({ ...form, type: "auction" }),
+  })
+  return toView(created)
+}
+
+// 상품 수정
+export async function updateProduct(id, form) {
+  const updated = await apiRequest(`/products/${id}`, {
+    method: "PUT",
+    body: toUpdatePayload(form),
+  })
+  return toView(updated)
+}
+
+// 상품 삭제
+export async function deleteProduct(id) {
+  await apiRequest(`/products/${id}`, { method: "DELETE" })
+  return true
+}
+
+// 이미지 업로드
+export async function uploadProductImages(productId, files) {
+  const formData = new FormData()
+  files.forEach((file) => formData.append("images", file))
+  const token = localStorage.getItem("accessToken")
+  const res = await fetch(`http://localhost:8000/api/products/${productId}/images`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  })
+  if (!res.ok) throw new Error("이미지 업로드 실패")
+  return res.json()
 }

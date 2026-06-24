@@ -15,6 +15,19 @@ export function formatDate(value) {
   }).format(d)
 }
 
+export function formatDateTime(value) {
+  if (!value) return "-"
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return String(value)
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d)
+}
+
 // Returns a human readable "남은 시간" string from a future timestamp.
 export function timeLeft(endAt) {
   const diff = endAt - Date.now()

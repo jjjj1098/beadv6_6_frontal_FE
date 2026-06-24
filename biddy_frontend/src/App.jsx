@@ -7,6 +7,7 @@ import SignupPage from "./pages/SignupPage"
 import ProductListPage from "./pages/ProductListPage"
 import ProductDetailPage from "./pages/ProductDetailPage"
 import ProductCreateTypePage from "./pages/ProductCreateTypePage"
+import ProductEditPage from "./pages/ProductEditPage"
 import NormalProductCreatePage from "./pages/NormalProductCreatePage"
 import AuctionProductCreatePage from "./pages/AuctionProductCreatePage"
 import CartPage from "./pages/CartPage"
@@ -75,6 +76,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AuctionProductCreatePage />
+            </ProtectedRoute>
+          }
+        />
+          <Route
+          path="/products/:id/edit"
+          element={
+            <ProtectedRoute>
+              <ProductEditPage />
             </ProtectedRoute>
           }
         />
