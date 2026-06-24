@@ -12,6 +12,10 @@ import AuctionProductCreatePage from "./pages/AuctionProductCreatePage"
 import CartPage from "./pages/CartPage"
 import OrderPage from "./pages/OrderPage"
 import WalletPage from "./pages/WalletPage"
+import MyPage from "./pages/Mypage"
+import AdminPage from "./pages/AdminsPage"
+import AdminRoute from "./components/AdminRoute"
+import MainPage from "./pages/MainPage"
 
 export default function App() {
   const { isAuthenticated } = useAuth()
@@ -19,9 +23,26 @@ export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/products" : "/login"} replace />} />
+        <Route path="/" element={<MainPage />} />
+  <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/mypage"
+          element={
+            <ProtectedRoute>
+              <MyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          }
+        />
         <Route
           path="/products"
           element={

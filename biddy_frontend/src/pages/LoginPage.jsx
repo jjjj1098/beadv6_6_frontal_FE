@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  const from = location.state?.from?.pathname || "/products"
+  const from = location.state?.from?.pathname || "/"
   const notice = location.state?.notice
   const update = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
@@ -32,16 +32,16 @@ export default function LoginPage() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/products" replace />
+    return <Navigate to="/" replace />
   }
 
   return (
     <PageContainer withTabBar={false} className="flex flex-col">
       <main className="flex min-h-screen flex-col justify-center py-10">
         <div className="mb-9">
-          <p className="text-xl font-extrabold tracking-tight text-dark">
+          <Link className="text-xl font-extrabold tracking-tight text-dark" to="/">
             Bid<span className="text-teal">dy</span>
-          </p>
+          </Link>
           <h1 className="mt-5 text-3xl font-extrabold text-foreground">로그인</h1>
           <p className="mt-2 text-sm text-muted-foreground">계정으로 들어가 상품을 둘러보고 거래를 시작하세요.</p>
         </div>
