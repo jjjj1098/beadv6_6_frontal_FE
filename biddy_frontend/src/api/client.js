@@ -1,4 +1,4 @@
-export const API_BASE_URL = "http://localhost:8000/api"
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api"
 
 // Builds the headers for an authenticated request.
 // JWT will be stored in localStorage under `accessToken` once auth is wired up.
@@ -17,8 +17,6 @@ export async function apiRequest(path, { method = "GET", body, headers = {} } = 
 
   const res = await fetch(url, {
     method,
-    mode: "cors",
-    credentials: "omit",
     headers: getAuthHeaders(headers),
     body: body ? JSON.stringify(body) : undefined,
   })
@@ -29,11 +27,13 @@ export async function apiRequest(path, { method = "GET", body, headers = {} } = 
   console.log("[apiRequest] body:", text)
 
   let data = null
-  try {
-    data = text ? JSON.parse(text) : null
-  } catch {
-    // 응답이 JSON이 아닌 경우 (예: "Invalid CORS request" 평문)
-    throw new Error(text || "요청 처리 중 오류가 발생했습니다.")
+
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = { message: text }
+    }
   }
 
   if (!res.ok) {
