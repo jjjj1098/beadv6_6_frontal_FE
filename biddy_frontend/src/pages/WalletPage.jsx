@@ -3,7 +3,7 @@ import { Wallet as WalletIcon, ArrowDownLeft, ArrowUpRight, Plus, RefreshCw } fr
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchWallet } from "../api/paymentApi"
-import { formatDate, formatKRW } from "../lib/format"
+import { formatDateTime, formatKRW } from "../lib/format"
 import { requestDepositPayment } from "../lib/tossPayments"
 
 const CHARGE_OPTIONS = [50000, 100000, 300000, 500000]
@@ -225,7 +225,7 @@ export default function WalletPage() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(item.createdAt)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</p>
                       </div>
                       <span
                         className={`flex-shrink-0 text-sm font-bold ${isPositive ? "text-teal" : "text-foreground"}`}
