@@ -1,8 +1,5 @@
 import { apiRequest } from "./client"
 
-// 테스트용 임시 ID (로그인 붙기 전까지)
-export const TEST_USER_ID = "33333333-3333-3333-3333-333333333333"
-
 // 백엔드(name/saleType) → 화면(title/type) 변환
 function toView(p) {
   return {
@@ -18,8 +15,14 @@ function toView(p) {
     brand: p.brand,
     sellerId: p.sellerId,
     regDt: p.regDt,
-    image: "/images/placeholder.png",
+    image: p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls[0] : "/images/placeholder.png",
+    imageUrls: p.imageUrls || [],
     liked: false,
+    seller: {
+      name: `판매자 ${p.sellerId}`,
+      rating: 0,
+      deals: 0,
+    },
   }
 }
 
@@ -34,12 +37,10 @@ function toCreatePayload(form) {
     category: form.category,
     brand: form.brand ?? "",
     saleType: form.type === "auction" ? "AUCTION" : "NORMAL",
-    sellerId: form.sellerId ?? TEST_USER_ID,
-    creatorId: form.creatorId ?? TEST_USER_ID,
   }
 }
 
-// 화면 → 백엔드(update) 변환 (update는 saleType/sellerId 없음, modifierId 있음)
+// 화면 → 백엔드(update) 변환
 function toUpdatePayload(form) {
   return {
     name: form.title,
@@ -49,11 +50,10 @@ function toUpdatePayload(form) {
     status: form.status,
     category: form.category,
     brand: form.brand ?? "",
-    modifierId: form.modifierId ?? TEST_USER_ID,
   }
 }
 
-// 목록 조회 (전체 / NORMAL / AUCTION)
+// 목록 조회
 export async function fetchProducts({ saleType = "all" } = {}) {
   const query =
     saleType === "all" ? "" : `?saleType=${saleType === "auction" ? "AUCTION" : "NORMAL"}`
@@ -76,7 +76,7 @@ export async function createNormalProduct(form) {
   return toView(created)
 }
 
-// 경매 상품 등록 (→ 백엔드에서 Kafka 발행됨)
+// 경매 상품 등록
 export async function createAuctionProduct(form) {
   const created = await apiRequest("/products", {
     method: "POST",
@@ -98,4 +98,18 @@ export async function updateProduct(id, form) {
 export async function deleteProduct(id) {
   await apiRequest(`/products/${id}`, { method: "DELETE" })
   return true
+}
+
+// 이미지 업로드
+export async function uploadProductImages(productId, files) {
+  const formData = new FormData()
+  files.forEach((file) => formData.append("images", file))
+  const token = localStorage.getItem("accessToken")
+  const res = await fetch(`http://localhost:8000/api/products/${productId}/images`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  })
+  if (!res.ok) throw new Error("이미지 업로드 실패")
+  return res.json()
 }
