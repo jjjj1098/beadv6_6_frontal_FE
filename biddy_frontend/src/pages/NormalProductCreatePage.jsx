@@ -5,12 +5,9 @@ import PageContainer from "../components/PageContainer"
 import ImageUploader from "../components/ImageUploader"
 import { Field, TextInput, TextArea, Select } from "../components/FormField"
 import { CATEGORIES } from "../api/mockData"
-import { createNormalProduct } from "../api/productApi"
+import { createNormalProduct, uploadProductImages } from "../api/productApi"
 
 const CONDITIONS = ["새 상품", "거의 새것", "사용감 적음", "사용감 있음"]
-
-// 테스트용 임시 ID (원래는 로그인 JWT에서 옴)
-const TEST_USER_ID = "33333333-3333-3333-3333-333333333333"
 
 export default function NormalProductCreatePage() {
   const navigate = useNavigate()
@@ -22,6 +19,7 @@ export default function NormalProductCreatePage() {
     stock: "1",
     condition: "거의 새것",
   })
+  const [imageFiles, setImageFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -30,7 +28,7 @@ export default function NormalProductCreatePage() {
     if (e) e.preventDefault()
     setSubmitting(true)
     try {
-      await createNormalProduct({
+      const created = await createNormalProduct({
         title: form.title,
         description: form.description,
         category: form.category,
@@ -38,9 +36,10 @@ export default function NormalProductCreatePage() {
         stock: Number(form.stock),
         status: form.condition,
         brand: "",
-        sellerId: TEST_USER_ID,
-        creatorId: TEST_USER_ID,
       })
+      if (imageFiles.length > 0) {
+        await uploadProductImages(created.id, imageFiles)
+      }
       alert("등록 성공!")
       navigate("/products")
     } catch (err) {
@@ -53,8 +52,6 @@ export default function NormalProductCreatePage() {
   return (
     <PageContainer withTabBar={false}>
       <Header showBack title="일반 판매 등록" showCart={false} />
-
-      {/* 등록 버튼 (탭바에 안 가리게 폼 위쪽에 배치) */}
       <button
         onClick={handleSubmit}
         disabled={submitting}
@@ -62,20 +59,16 @@ export default function NormalProductCreatePage() {
       >
         {submitting ? "등록 중..." : "상품 등록하기"}
       </button>
-
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4 pb-28">
-        <Field label="상품 이미지" required hint="최대 5장">
-          <ImageUploader />
+        <Field label="상품 이미지" hint="최대 5장">
+          <ImageUploader onFilesChange={setImageFiles} />
         </Field>
-
         <Field label="상품명" required>
           <TextInput value={form.title} onChange={update("title")} placeholder="상품명을 입력하세요" required />
         </Field>
-
         <Field label="카테고리" required>
           <Select value={form.category} onChange={update("category")} options={CATEGORIES.filter((c) => c !== "전체")} />
         </Field>
-
         <Field label="상품 설명" required>
           <TextArea
             value={form.description}
@@ -85,7 +78,6 @@ export default function NormalProductCreatePage() {
             required
           />
         </Field>
-
         <div className="grid grid-cols-2 gap-3">
           <Field label="판매 가격" required>
             <TextInput value={form.price} onChange={update("price")} type="number" inputMode="numeric" placeholder="0" required />
@@ -94,7 +86,6 @@ export default function NormalProductCreatePage() {
             <TextInput value={form.stock} onChange={update("stock")} type="number" inputMode="numeric" placeholder="1" required />
           </Field>
         </div>
-
         <Field label="상품 상태" required>
           <Select value={form.condition} onChange={update("condition")} options={CONDITIONS} />
         </Field>
