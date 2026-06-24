@@ -1,21 +1,24 @@
-import { mockRequest } from "./client"
-import { cartItems } from "./mockData"
+import { apiRequest } from "./client"
 
 export function fetchCart() {
-  return mockRequest("/cart", { data: cartItems })
+  return apiRequest("/cart/list")
 }
 
-export function addToCart(productId, qty = 1) {
-  // POST /cart
-  return mockRequest("/cart", { data: { productId, qty, success: true } })
-}
-
-export function updateCartItem(itemId, qty) {
-  // PATCH /cart/:itemId
-  return mockRequest(`/cart/${itemId}`, { data: { itemId, qty, success: true } })
+export function addToCart(productId) {
+  return apiRequest("/cart/item", {
+    method: "POST",
+    body: JSON.stringify({ productId }),
+  })
 }
 
 export function removeCartItem(itemId) {
-  // DELETE /cart/:itemId
-  return mockRequest(`/cart/${itemId}`, { data: { itemId, success: true } })
+  return apiRequest(`/cart/delete?cartId=${itemId}`, {
+    method: "DELETE",
+  })
+}
+
+export function cleanCart() {
+  return apiRequest("/cart/clean", {
+    method: "DELETE",
+  })
 }

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 import { Home, Package, PlusCircle, ShoppingCart, Wallet } from "lucide-react"
 
 const tabs = [
@@ -10,6 +10,13 @@ const tabs = [
 ]
 
 export default function BottomTabBar() {
+  const location = useLocation()
+  const mainTabRoutes = ["/", "/products", "/cart", "/products/create", "/wallet"]
+
+  if (!mainTabRoutes.includes(location.pathname)) {
+    return null
+  }
+
   return (
     <nav className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-border bg-card">
       <ul className="flex">

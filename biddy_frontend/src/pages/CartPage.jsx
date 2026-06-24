@@ -5,7 +5,9 @@ import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import PriceText from "../components/PriceText"
 import { formatKRW } from "../lib/format"
-import { fetchCart, removeCartItem } from "../api/cartApi"
+import { fetchCart, removeCartItem, cleanCart } from "../api/cartApi"
+import { fetchProductById } from "../api/productApi"
+import { createOrder, startPaymentProcessing } from "../api/orderApi"
 
 export default function CartPage() {
   const navigate = useNavigate()
@@ -14,11 +16,54 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchCart().then((data) => {
-      setItems(data)
-      setSelected(Object.fromEntries(data.map((i) => [i.id, true])))
-      setLoading(false)
-    })
+    const loadCartData = async () => {
+      try {
+        const cartList = await fetchCart()
+        
+        if (!cartList || cartList.length === 0) {
+          setItems([])
+          setSelected({})
+          return
+        }
+
+        const resolvedItems = await Promise.all(
+          cartList.map(async (item) => {
+            try {
+              const product = await fetchProductById(item.productId)
+              return {
+                id: item.id,
+                productId: item.productId,
+                title: product.name || product.title || "이름 없는 상품",
+                price: product.price,
+                qty: 1,
+                image: product.image || null,
+                createdAt: item.createdAt,
+              }
+            } catch (err) {
+              console.error(`상품 정보 로드 실패 (${item.productId}):`, err)
+              return {
+                id: item.id,
+                productId: item.productId,
+                title: "정보를 불러올 수 없는 상품",
+                price: 0,
+                qty: 1,
+                image: null,
+                createdAt: item.createdAt,
+                error: true,
+              }
+            }
+          })
+        )
+        setItems(resolvedItems)
+        setSelected(Object.fromEntries(resolvedItems.map((i) => [i.id, true])))
+      } catch (err) {
+        console.error("장바구니 로드 실패:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCartData()
   }, [])
 
   const toggle = (id) => setSelected((s) => ({ ...s, [id]: !s[id] }))
@@ -32,19 +77,35 @@ export default function CartPage() {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)))
 
   const remove = async (id) => {
-    await removeCartItem(id)
-    setItems((prev) => prev.filter((i) => i.id !== id))
-    setSelected((s) => {
-      const next = { ...s }
-      delete next[id]
-      return next
-    })
+    if (!window.confirm("해당 상품을 장바구니에서 삭제하시겠습니까?")) return
+    try {
+      await removeCartItem(id)
+      setItems((prev) => prev.filter((i) => i.id !== id))
+      setSelected((s) => {
+        const next = { ...s }
+        delete next[id]
+        return next
+      })
+    } catch (err) {
+      alert("상품 삭제에 실패했습니다: " + err.message)
+    }
+  }
+
+  const handleCleanCart = async () => {
+    if (!window.confirm("장바구니를 완전히 비우시겠습니까?")) return
+    try {
+      await cleanCart()
+      setItems([])
+      setSelected({})
+    } catch (err) {
+      alert("장바구니 비우기에 실패했습니다: " + err.message)
+    }
   }
 
   const selectedItems = items.filter((i) => selected[i.id])
   const total = selectedItems.reduce((sum, i) => sum + i.price * i.qty, 0)
 
-  const goOrder = () => {
+  const handleCreateOrder = () => {
     if (selectedItems.length === 0) return
     navigate("/orders", { state: { items: selectedItems, total } })
   }
@@ -92,6 +153,12 @@ export default function CartPage() {
           <input type="checkbox" checked={allChecked} onChange={toggleAll} className="h-4 w-4 accent-[#10b3b6]" />
           전체 선택 ({selectedItems.length}/{items.length})
         </label>
+        <button 
+          onClick={handleCleanCart} 
+          className="text-xs font-semibold text-rose-500 hover:underline"
+        >
+          장바구니 비우기
+        </button>
       </div>
 
       <ul className="flex flex-col gap-3 pb-40">
@@ -132,13 +199,13 @@ export default function CartPage() {
       </ul>
 
       {/* Sticky total */}
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+      <div className="fixed bottom-[58px] left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm text-muted-foreground">선택 상품 {selectedItems.length}개</span>
           <span className="text-lg font-extrabold text-foreground">{formatKRW(total)}</span>
         </div>
         <button
-          onClick={goOrder}
+          onClick={handleCreateOrder}
           disabled={selectedItems.length === 0}
           className="h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
         >

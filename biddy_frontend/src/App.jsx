@@ -16,6 +16,9 @@ import MyPage from "./pages/Mypage"
 import AdminPage from "./pages/AdminsPage"
 import AdminRoute from "./components/AdminRoute"
 import MainPage from "./pages/MainPage"
+import { DepositChargeFailPage, DepositChargeSuccessPage } from "./pages/DepositChargeResultPage"
+import PaymentSuccessPage from "./pages/PaymentSuccessPage"
+import PaymentFailPage from "./pages/PaymentFailPage"
 
 export default function App() {
   const { isAuthenticated } = useAuth()
@@ -104,6 +107,38 @@ export default function App() {
           element={
             <ProtectedRoute>
               <WalletPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wallet/charge/success"
+          element={
+            <ProtectedRoute>
+              <DepositChargeSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wallet/charge/fail"
+          element={
+            <ProtectedRoute>
+              <DepositChargeFailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payments/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payments/fail"
+          element={
+            <ProtectedRoute>
+              <PaymentFailPage />
             </ProtectedRoute>
           }
         />
