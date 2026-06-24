@@ -1,117 +1,144 @@
-import { useEffect, useMemo, useState } from "react"
-import { Search } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
-import ProductCard from "../components/ProductCard"
-import AuctionCard from "../components/AuctionCard"
-import { fetchProducts } from "../api/productApi"
-import { CATEGORIES } from "../api/mockData"
+import { fetchProducts, deleteProduct } from "../api/productApi"
 
 const SALE_TYPES = [
   { key: "all", label: "전체" },
-  { key: "normal", label: "일반 판매" },
-  { key: "auction", label: "경매" },
+  { key: "normal", label: "일반(NORMAL)" },
+  { key: "auction", label: "경매(AUCTION)" },
 ]
 
 export default function ProductListPage() {
-  const [search, setSearch] = useState("")
-  const [category, setCategory] = useState("전체")
+  const navigate = useNavigate()
   const [saleType, setSaleType] = useState("all")
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const load = () => {
+    setLoading(true)
+    setError(null)
+    fetchProducts({ saleType })
+      .then((data) => setItems(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
-    let active = true
-    setLoading(true)
-    fetchProducts({ search, category, saleType }).then((data) => {
-      if (active) {
-        setItems(data)
-        setLoading(false)
-      }
-    })
-    return () => {
-      active = false
-    }
-  }, [search, category, saleType])
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saleType])
 
-  const empty = useMemo(() => !loading && items.length === 0, [loading, items])
+  const handleDelete = async (id) => {
+    if (!confirm("이 상품을 삭제할까요?")) return
+    try {
+      await deleteProduct(id)
+      load()
+    } catch (err) {
+      alert("삭제 실패: " + err.message)
+    }
+  }
 
   return (
     <PageContainer noPadX>
       <Header />
 
-      {/* Search */}
       <div className="px-4 pt-3">
-        <div className="flex items-center gap-2 rounded-xl bg-card px-3 py-2.5 ring-1 ring-border">
-          <Search size={18} className="text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="어떤 상품을 찾고 계신가요?"
-            className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-          />
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">상품 목록 (Product 도메인)</h2>
+          <button
+            onClick={load}
+            className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+          >
+            새로고침
+          </button>
         </div>
-      </div>
 
-      {/* Sale type filter */}
-      <div className="flex gap-2 px-4 pt-3">
-        {SALE_TYPES.map((t) => {
-          const active = saleType === t.key
-          return (
+        {/* 판매유형 필터 */}
+        <div className="mt-3 flex gap-2">
+          {SALE_TYPES.map((t) => (
             <button
               key={t.key}
               onClick={() => setSaleType(t.key)}
               className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${
-                active ? "bg-dark text-dark-foreground" : "bg-card text-muted-foreground ring-1 ring-border"
+                saleType === t.key
+                  ? "bg-dark text-dark-foreground"
+                  : "bg-card text-muted-foreground ring-1 ring-border"
               }`}
             >
               {t.label}
             </button>
-          )
-        })}
+          ))}
+        </div>
+
+        {/* 등록 버튼 */}
+        <button
+          onClick={() => navigate("/products/create")}
+          className="mt-3 w-full rounded-lg bg-teal py-2.5 text-sm font-semibold text-teal-foreground"
+        >
+          + 상품 등록
+        </button>
       </div>
 
-      {/* Category filter */}
-      <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4">
-        {CATEGORIES.map((c) => {
-          const active = category === c
-          return (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                active ? "bg-teal text-teal-foreground" : "bg-card text-muted-foreground ring-1 ring-border"
-              }`}
-            >
-              {c}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Grid */}
-      <div className="mt-4 px-4">
+      {/* 목록 */}
+      <div className="mt-4 flex flex-col gap-2 px-4 pb-24">
         {loading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-muted" />
-            ))}
-          </div>
-        ) : empty ? (
-          <div className="flex flex-col items-center gap-2 py-20 text-center">
-            <p className="text-sm font-medium text-foreground">검색 결과가 없습니다</p>
-            <p className="text-xs text-muted-foreground">다른 키워드나 필터를 시도해 보세요.</p>
-          </div>
+          <p className="py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
+        ) : error ? (
+          <p className="py-10 text-center text-sm text-red-500">에러: {error}</p>
+        ) : items.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">상품이 없습니다.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {items.map((p) =>
-              p.type === "auction" ? (
-                <AuctionCard key={p.id} product={p} />
-              ) : (
-                <ProductCard key={p.id} product={p} />
-              ),
-            )}
-          </div>
+          items.map((p) => (
+            <div
+              key={p.id}
+              className="rounded-xl bg-card p-3 ring-1 ring-border"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground">{p.title}</span>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                        p.type === "auction"
+                          ? "bg-amber-soft text-amber"
+                          : "bg-teal-soft text-teal"
+                      }`}
+                    >
+                      {p.saleType}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {p.category} · {Number(p.price).toLocaleString()}원 · 재고 {p.stock} · 상태 {p.status}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">id: {p.id}</p>
+                </div>
+              </div>
+
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => navigate(`/products/${p.id}`)}
+                  className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+                >
+                  상세
+                </button>
+                <button
+                  onClick={() => navigate(`/products/${p.id}/edit`)}
+                  className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="flex-1 rounded-lg bg-red-500 py-1.5 text-xs font-semibold text-white"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </PageContainer>

@@ -9,6 +9,9 @@ import { createNormalProduct } from "../api/productApi"
 
 const CONDITIONS = ["새 상품", "거의 새것", "사용감 적음", "사용감 있음"]
 
+// 테스트용 임시 ID (원래는 로그인 JWT에서 옴)
+const TEST_USER_ID = "33333333-3333-3333-3333-333333333333"
+
 export default function NormalProductCreatePage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -24,16 +27,41 @@ export default function NormalProductCreatePage() {
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     setSubmitting(true)
-    await createNormalProduct({ ...form, price: Number(form.price), stock: Number(form.stock) })
-    setSubmitting(false)
-    navigate("/products")
+    try {
+      await createNormalProduct({
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        status: form.condition,
+        brand: "",
+        sellerId: TEST_USER_ID,
+        creatorId: TEST_USER_ID,
+      })
+      alert("등록 성공!")
+      navigate("/products")
+    } catch (err) {
+      alert("등록 실패: " + err.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <PageContainer withTabBar={false}>
       <Header showBack title="일반 판매 등록" showCart={false} />
+
+      {/* 등록 버튼 (탭바에 안 가리게 폼 위쪽에 배치) */}
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="mt-3 h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
+      >
+        {submitting ? "등록 중..." : "상품 등록하기"}
+      </button>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4 pb-28">
         <Field label="상품 이미지" required hint="최대 5장">
@@ -71,16 +99,6 @@ export default function NormalProductCreatePage() {
           <Select value={form.condition} onChange={update("condition")} options={CONDITIONS} />
         </Field>
       </form>
-
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
-        >
-          {submitting ? "등록 중..." : "상품 등록하기"}
-        </button>
-      </div>
     </PageContainer>
   )
 }
