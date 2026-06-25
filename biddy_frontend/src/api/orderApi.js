@@ -1,13 +1,18 @@
-import { mockRequest } from "./client"
-import { orders } from "./mockData"
+import { apiRequest } from "./client"
 
 export function fetchOrders() {
-  return mockRequest("/orders", { data: orders })
+  return apiRequest("/order/list")
 }
 
 export function createOrder(payload) {
-  // POST /orders  (Authorization header attached via client.getAuthHeaders)
-  return mockRequest("/orders", {
-    data: { id: `o_${Date.now()}`, status: "paid", createdAt: new Date().toISOString(), ...payload },
+  return apiRequest("/order/create", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}
+
+export function startPaymentProcessing(orderId) {
+  return apiRequest(`/orders/${orderId}/payment-processing`, {
+    method: "PATCH",
   })
 }

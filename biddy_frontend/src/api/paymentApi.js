@@ -5,6 +5,10 @@ export const PAYMENT_METHOD = {
   NORMAL: "NORMAL",
 }
 
+export function confirmPayment(payload) {
+  return createPayment(payload)
+}
+
 const TRANSACTION_LABELS = {
   CHARGE: "예치금 충전",
   WITHDRAW: "예치금 출금",
@@ -14,7 +18,6 @@ const TRANSACTION_LABELS = {
   SETTLEMENT: "정산 지급",
   ADJUSTMENT: "예치금 조정",
 }
-
 function unwrapApiResponse(response) {
   if (response && typeof response === "object" && "success" in response) {
     if (!response.success) {
