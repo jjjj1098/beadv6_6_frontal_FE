@@ -7,7 +7,6 @@ import PriceText from "../components/PriceText"
 import { formatKRW } from "../lib/format"
 import { fetchCart, removeCartItem, cleanCart } from "../api/cartApi"
 import { fetchProductById } from "../api/productApi"
-import { createOrder, startPaymentProcessing } from "../api/orderApi"
 
 export default function CartPage() {
   const navigate = useNavigate()
@@ -35,6 +34,7 @@ export default function CartPage() {
                 productId: item.productId,
                 title: product.name || product.title || "이름 없는 상품",
                 price: product.price,
+                sellerId: product.sellerId,
                 qty: 1,
                 image: product.image || null,
                 createdAt: item.createdAt,

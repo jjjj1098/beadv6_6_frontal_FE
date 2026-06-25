@@ -6,6 +6,7 @@ import { cleanCart } from "../api/cartApi"
 import { formatKRW } from "../lib/format"
 import PageContainer from "../components/PageContainer"
 import Header from "../components/Header"
+import { PENDING_ORDER_PAYMENT_PREFIX } from "../lib/tossPayments"
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
@@ -31,13 +32,19 @@ export default function PaymentSuccessPage() {
     hasCalled.current = true
 
     const amount = Number(amountStr)
-    // Extract the database order number from tossOrderId (e.g., "order-12" -> 12)
-    const dbOrderIdStr = tossOrderId.replace("order-", "")
-    const orderId = Number(dbOrderIdStr)
+    let pending = null
+    try {
+      pending = JSON.parse(
+        window.localStorage.getItem(`${PENDING_ORDER_PAYMENT_PREFIX}${tossOrderId}`) || "null",
+      )
+    } catch {
+      window.localStorage.removeItem(`${PENDING_ORDER_PAYMENT_PREFIX}${tossOrderId}`)
+    }
 
-    if (isNaN(orderId)) {
+    const orderId = Number(pending?.orderId)
+    if (!pending || !Number.isSafeInteger(orderId) || Number(pending.amount) !== amount) {
       setStatus("error")
-      setErrorMessage("유효하지 않은 주문 ID 형식입니다.")
+      setErrorMessage("요청한 주문 정보와 Toss 결제 결과가 일치하지 않습니다.")
       return
     }
 
@@ -55,6 +62,7 @@ export default function PaymentSuccessPage() {
       .then((res) => {
         setPaymentDetails(res)
         setStatus("success")
+        window.localStorage.removeItem(`${PENDING_ORDER_PAYMENT_PREFIX}${tossOrderId}`)
         cleanCart().catch((cartErr) => {
           console.error("결제 성공 후 장바구니 비우기 실패:", cartErr)
         })
@@ -93,7 +101,7 @@ export default function PaymentSuccessPage() {
             <div className="w-full rounded-2xl bg-card p-5 ring-1 ring-border text-left mb-8">
               <div className="flex justify-between items-center py-2 border-b border-border text-sm">
                 <span className="text-muted-foreground">주문 번호</span>
-                <span className="font-semibold text-foreground">{tossOrderId?.replace("order-", "")}</span>
+                <span className="font-semibold text-foreground">{paymentDetails?.orderId || "-"}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border text-sm">
                 <span className="text-muted-foreground">결제 금액</span>

@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Package, CreditCard, ShoppingBag } from "lucide-react"
+import { Package, CreditCard, ShoppingBag, WalletCards } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import StatusBadge from "../components/StatusBadge"
-import { fetchOrders, createOrder, startPaymentProcessing } from "../api/orderApi"
+import { fetchOrders, createOrder } from "../api/orderApi"
+import { cleanCart } from "../api/cartApi"
+import { createPayment, fetchDepositBalance, PAYMENT_METHOD } from "../api/paymentApi"
 import { formatKRW, formatDate } from "../lib/format"
+import { requestOrderPayment } from "../lib/tossPayments"
 
 const ORDER_STATUS = {
   PENDING: { label: "결제 대기", variant: "amber" },
@@ -24,6 +27,9 @@ export default function OrderPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.WALLET)
+  const [walletBalance, setWalletBalance] = useState(null)
+  const [walletLoading, setWalletLoading] = useState(false)
 
   // Load past orders only if not in checkout mode
   useEffect(() => {
@@ -52,8 +58,36 @@ export default function OrderPage() {
     }
   }, [checkoutData])
 
+  useEffect(() => {
+    if (!checkoutData) return
+
+    let active = true
+    setWalletLoading(true)
+    fetchDepositBalance()
+      .then((data) => {
+        if (active) setWalletBalance(Number(data?.balance ?? 0))
+      })
+      .catch((err) => {
+        console.error("예치금 잔액 조회 실패:", err)
+        if (active) setWalletBalance(null)
+      })
+      .finally(() => {
+        if (active) setWalletLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [checkoutData])
+
   const handleCheckout = async () => {
     if (!checkoutData || checkoutData.items.length === 0) return
+
+    const amount = Number(checkoutData.total)
+    if (paymentMethod === PAYMENT_METHOD.WALLET && walletBalance !== null && walletBalance < amount) {
+      alert("예치금 잔액이 부족합니다. 예치금을 충전하거나 Toss 결제를 선택해 주세요.")
+      return
+    }
     
     setSubmitting(true)
     try {
@@ -63,34 +97,32 @@ export default function OrderPage() {
           productId: item.productId,
           orderPrice: Number(item.price),
           quantity: Number(item.qty),
-          sellerId: 1, // Default dummy Long seller ID for integration
+          sellerId: Number(item.sellerId),
         })),
       }
 
       // 2. Create the order in the backend
       const createdOrder = await createOrder(payload)
       
-      // 3. Trigger Toss Payments SDK
       if (createdOrder && createdOrder.id) {
-
-        const clientKey = "test_ck_Z61JOxRQVEG4ljXxB91D8W0X9bAq"
-        if (typeof window.TossPayments !== "function") {
-          throw new Error("Toss Payments SDK가 로드되지 않았습니다. index.html의 스크립트 로드를 확인하세요.")
+        if (paymentMethod === PAYMENT_METHOD.WALLET) {
+          await createPayment({
+            orderId: createdOrder.id,
+            amount,
+            paymentMethod: PAYMENT_METHOD.WALLET,
+          })
+          await cleanCart()
+          alert("예치금 결제가 완료되었습니다.")
+          navigate("/orders", { replace: true })
+          return
         }
 
-        const tossPayments = window.TossPayments(clientKey)
-        const amount = Number(checkoutData.total)
-        
         // Combine product titles for order name
         const orderName = checkoutData.items.map((item) => item.title).join(", ")
-        const tossOrderId = `order-${createdOrder.id}`
-
-        tossPayments.requestPayment("카드", {
+        await requestOrderPayment({
+          orderId: createdOrder.id,
           amount,
-          orderId: tossOrderId,
           orderName,
-          successUrl: `${window.location.origin}/payments/success`,
-          failUrl: `${window.location.origin}/payments/fail`,
         })
       }
       
@@ -158,6 +190,51 @@ export default function OrderPage() {
           </div>
         </div>
 
+        <div className="mt-4 rounded-2xl bg-card p-4 ring-1 ring-border">
+          <h3 className="mb-3 text-sm font-bold text-foreground">결제 수단</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod(PAYMENT_METHOD.WALLET)}
+              className={`rounded-xl border p-3 text-left transition-colors ${
+                paymentMethod === PAYMENT_METHOD.WALLET
+                  ? "border-[#10b3b6] bg-[#10b3b6]/10"
+                  : "border-border bg-background"
+              }`}
+            >
+              <WalletCards size={20} className="mb-2 text-[#10b3b6]" />
+              <span className="block text-sm font-semibold text-foreground">예치금 결제</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {walletLoading
+                  ? "잔액 확인 중..."
+                  : walletBalance === null
+                    ? "잔액 조회 실패"
+                    : `잔액 ${formatKRW(walletBalance)}`}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod(PAYMENT_METHOD.NORMAL)}
+              className={`rounded-xl border p-3 text-left transition-colors ${
+                paymentMethod === PAYMENT_METHOD.NORMAL
+                  ? "border-[#10b3b6] bg-[#10b3b6]/10"
+                  : "border-border bg-background"
+              }`}
+            >
+              <CreditCard size={20} className="mb-2 text-[#10b3b6]" />
+              <span className="block text-sm font-semibold text-foreground">Toss 결제</span>
+              <span className="mt-1 block text-xs text-muted-foreground">카드 등 일반 결제</span>
+            </button>
+          </div>
+          {paymentMethod === PAYMENT_METHOD.WALLET &&
+            walletBalance !== null &&
+            walletBalance < Number(checkoutData.total) && (
+              <p className="mt-3 text-xs font-medium text-rose-500">
+                예치금이 {formatKRW(Number(checkoutData.total) - walletBalance)} 부족합니다.
+              </p>
+            )}
+        </div>
+
         {/* Sticky Checkout button */}
         <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
           <button
@@ -165,7 +242,9 @@ export default function OrderPage() {
             disabled={submitting}
             className="h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? "결제 처리 중..." : `${formatKRW(checkoutData.total)} 결제하기`}
+            {submitting
+              ? "결제 처리 중..."
+              : `${paymentMethod === PAYMENT_METHOD.WALLET ? "예치금으로" : "Toss로"} ${formatKRW(checkoutData.total)} 결제하기`}
           </button>
         </div>
       </PageContainer>
