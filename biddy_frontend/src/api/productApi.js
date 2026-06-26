@@ -28,7 +28,7 @@ function toView(p) {
 
 // 화면 → 백엔드(create) 변환
 function toCreatePayload(form) {
-  return {
+  const payload = {
     name: form.title,
     description: form.description,
     price: form.price,
@@ -38,6 +38,13 @@ function toCreatePayload(form) {
     brand: form.brand ?? "",
     saleType: form.type === "auction" ? "AUCTION" : "NORMAL",
   }
+  if (form.type === "auction") {
+    payload.startPrice = form.startPrice || form.price
+    payload.minIncrement = form.minIncrement || 500
+    payload.startsAt = form.startsAt || new Date().toISOString().slice(0, 19)
+    payload.endsAt = form.endsAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19)
+  }
+  return payload
 }
 
 // 화면 → 백엔드(update) 변환
