@@ -343,15 +343,6 @@ export default function AuctionDetailPage() {
           </div>
         </div>
       )}
-      {isLive && isSeller && (
-        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
-          <p className="mb-2 text-center text-xs text-muted-foreground">내 경매 상품입니다</p>
-          <button onClick={handleClose} disabled={closing}
-            className="h-12 w-full rounded-xl bg-red-500 font-semibold text-white disabled:opacity-50">
-            {closing ? "종료 처리 중..." : "경매 즉시 종료"}
-          </button>
-        </div>
-      )}
 
       <BidHistoryModal auctionId={auctionId} open={showHistory} onClose={() => setShowHistory(false)} />
       </div>
