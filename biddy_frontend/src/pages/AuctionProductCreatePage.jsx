@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom"
 import { Gavel } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
-import { createAuctionProduct } from "../api/productApi"
+import ImageUploader from "../components/ImageUploader"
+import { Field, Select } from "../components/FormField"
+import { CATEGORIES } from "../api/mockData"
+import { createAuctionProduct, uploadProductImages } from "../api/productApi"
 
 function defaultEndsAt() {
   const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -23,6 +26,7 @@ export default function AuctionProductCreatePage() {
     brand: "",
     endsAt: defaultEndsAt(),
   })
+  const [imageFiles, setImageFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -32,7 +36,7 @@ export default function AuctionProductCreatePage() {
     if (!form.startPrice) { alert("시작가를 입력하세요"); return }
     setSubmitting(true)
     try {
-      await createAuctionProduct({
+      const created = await createAuctionProduct({
         ...form,
         price: Number(form.startPrice),
         startPrice: Number(form.startPrice),
@@ -41,6 +45,9 @@ export default function AuctionProductCreatePage() {
         startsAt: new Date().toISOString().slice(0, 19),
         endsAt: form.endsAt,
       })
+      if (imageFiles.length > 0) {
+        await uploadProductImages(created.id, imageFiles)
+      }
       alert("경매 상품 등록 성공!")
       navigate("/")
     } catch (err) {
@@ -60,12 +67,25 @@ export default function AuctionProductCreatePage() {
         등록 시 Kafka로 경매 등록 이벤트가 발행됩니다.
       </div>
 
-      <div className="flex flex-col gap-3 pt-4 pb-28">
-        <label className="text-sm font-semibold text-foreground">상품명 *</label>
-        <input value={form.title} onChange={update("title")} placeholder="상품명" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+      <div className="flex flex-col gap-4 pt-4 pb-28">
+        <Field label="상품 이미지" hint="최대 5장">
+          <ImageUploader onFilesChange={setImageFiles} />
+        </Field>
 
-        <label className="text-sm font-semibold text-foreground">설명</label>
-        <textarea value={form.description} onChange={update("description")} rows={3} placeholder="상품 설명" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold text-foreground">상품명 *</label>
+          <input value={form.title} onChange={update("title")} placeholder="상품명을 입력하세요" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold text-foreground">카테고리</label>
+          <Select value={form.category} onChange={update("category")} options={CATEGORIES.filter((c) => c !== "전체")} />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold text-foreground">상품 설명</label>
+          <textarea value={form.description} onChange={update("description")} rows={4} placeholder="상품의 상태, 구성품 등을 자세히 적어주세요." className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -78,14 +98,15 @@ export default function AuctionProductCreatePage() {
           </div>
         </div>
 
-        <label className="text-sm font-semibold text-foreground">경매 종료일시</label>
-        <input value={form.endsAt} onChange={update("endsAt")} type="datetime-local" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold text-foreground">경매 종료일시</label>
+          <input value={form.endsAt} onChange={update("endsAt")} type="datetime-local" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        </div>
 
-        <label className="text-sm font-semibold text-foreground">카테고리</label>
-        <input value={form.category} onChange={update("category")} className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
-
-        <label className="text-sm font-semibold text-foreground">브랜드</label>
-        <input value={form.brand} onChange={update("brand")} placeholder="브랜드" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold text-foreground">브랜드</label>
+          <input value={form.brand} onChange={update("brand")} placeholder="브랜드" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+        </div>
 
         <button
           onClick={handleSubmit}
