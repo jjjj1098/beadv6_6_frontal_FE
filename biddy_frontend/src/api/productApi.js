@@ -100,6 +100,28 @@ export async function deleteProduct(id) {
   return true
 }
 
+// 찜하기
+export async function likeProduct(id) {
+  await apiRequest(`/products/${id}/like`, { method: "POST" })
+}
+
+// 찜 취소
+export async function unlikeProduct(id) {
+  await apiRequest(`/products/${id}/like`, { method: "DELETE" })
+}
+
+// 찜 여부 조회
+export async function fetchIsLiked(id) {
+  const res = await apiRequest(`/products/${id}/is-liked`)
+  return res?.liked ?? false
+}
+
+// 내 찜 목록 조회
+export async function fetchLikedProducts() {
+  const list = await apiRequest("/products/liked")
+  return (list || []).map(toView)
+}
+
 // 이미지 업로드
 export async function uploadProductImages(productId, files) {
   const formData = new FormData()
