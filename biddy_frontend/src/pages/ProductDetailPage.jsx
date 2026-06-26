@@ -202,6 +202,10 @@ export default function ProductDetailPage() {
     setLoading(true)
     fetchProductById(id).then((data) => {
       if (active) {
+        if (data?.type === "auction") {
+          navigate("/auctions", { replace: true })
+          return
+        }
         setProduct(data)
         setLoading(false)
       }
@@ -209,7 +213,7 @@ export default function ProductDetailPage() {
     return () => {
       active = false
     }
-  }, [id])
+  }, [id, navigate])
 
   return (
     <PageContainer noPadX>
