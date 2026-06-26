@@ -89,6 +89,7 @@ function AuctionFeedInline() {
             <option value="latest">최신순</option>
             <option value="ending">마감임박</option>
             <option value="price">높은가격</option>
+            <option value="priceAsc">낮은가격</option>
           </select>
         </div>
       </div>
