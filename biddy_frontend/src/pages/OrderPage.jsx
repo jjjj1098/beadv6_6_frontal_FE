@@ -20,7 +20,7 @@ const ORDER_STATUS = {
   COMPLETED: { label: "구매 확정", variant: "teal" },
 }
 
-export default function OrderPage() {
+export default function OrderPage({ embedded = false }) {
   const location = useLocation()
   const navigate = useNavigate()
   const checkoutData = location.state // { items, total }
@@ -191,10 +191,12 @@ export default function OrderPage() {
   }
 
   if (loading) {
+    const loadingContent = <div className="py-20 text-center text-sm text-muted-foreground">불러오는 중...</div>
+    if (embedded) return loadingContent
     return (
       <PageContainer>
         <Header showBack title={checkoutData ? "주문서 작성" : "주문 내역"} showCart={false} />
-        <div className="py-20 text-center text-sm text-muted-foreground">불러오는 중...</div>
+        <div className="mx-auto w-full max-w-md">{loadingContent}</div>
       </PageContainer>
     )
   }
@@ -202,8 +204,9 @@ export default function OrderPage() {
   // --- Render Checkout Confirmation UI ---
   if (checkoutData) {
     return (
-      <PageContainer withTabBar={false}>
+      <PageContainer>
         <Header showBack title="주문서 작성" showCart={false} />
+        <div className="mx-auto w-full max-w-md">
 
         <div className="pt-3 pb-2 border-b border-border">
           <h2 className="text-base font-bold text-foreground flex items-center gap-1.5">
@@ -303,79 +306,83 @@ export default function OrderPage() {
               : `${paymentMethod === PAYMENT_METHOD.WALLET ? "예치금으로" : "Toss로"} ${formatKRW(checkoutData.total)} 결제하기`}
           </button>
         </div>
+        </div>
       </PageContainer>
     )
   }
 
   // --- Render Past Orders List UI ---
+  const ordersList =
+    orders.length === 0 ? (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <Package className="h-10 w-10 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">아직 주문 내역이 없어요</p>
+        <Link
+          to="/products"
+          className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-teal-foreground"
+        >
+          상품 보러가기
+        </Link>
+      </div>
+    ) : (
+      <ul className="flex flex-col gap-3 py-4 pb-24">
+        {orders.map((order) => {
+          const status = ORDER_STATUS[order.status] || { label: order.status, variant: "neutral" }
+
+          // Resolve product details from productsMap
+          const firstItem = order.orderInfos?.[0]
+          const product = firstItem ? productsMap[firstItem.productId] : null
+          const title = product
+            ? (order.orderInfos.length > 1
+                ? `${product.title} 외 ${order.orderInfos.length - 1}건`
+                : product.title)
+            : "상품 정보 없음"
+          const image = product?.image || "/placeholder.svg"
+
+          return (
+            <li key={order.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{formatDate(order.createdAt)}</span>
+                <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+              </div>
+              <div className="mt-3 flex gap-3">
+                <img
+                  src={image}
+                  alt={title}
+                  className="h-16 w-16 flex-shrink-0 rounded-lg border border-border object-cover"
+                />
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                  <p className="truncate text-sm font-medium text-foreground">{title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">주문번호 {order.id}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-xs text-muted-foreground">결제 금액</span>
+                <span className="text-sm font-bold text-foreground">{formatKRW(order.totalPrice || order.amount || 0)}</span>
+              </div>
+              {order.status === "PAID" && (
+                <div className="mt-3 flex justify-end border-t border-border pt-3">
+                  <button
+                    onClick={() => handleConfirmPurchase(order.id)}
+                    disabled={submitting}
+                    className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    구매확정
+                  </button>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    )
+
+  if (embedded) return ordersList
+
   return (
     <>
       <Header title="주문 내역" />
-      <PageContainer>
-        {orders.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <Package className="h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">아직 주문 내역이 없어요</p>
-            <Link
-              to="/products"
-              className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-teal-foreground"
-            >
-              상품 보러가기
-            </Link>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-3 py-4 pb-24">
-            {orders.map((order) => {
-              const status = ORDER_STATUS[order.status] || { label: order.status, variant: "neutral" }
-              
-              // Resolve product details from productsMap
-              const firstItem = order.orderInfos?.[0]
-              const product = firstItem ? productsMap[firstItem.productId] : null
-              const title = product 
-                ? (order.orderInfos.length > 1 
-                    ? `${product.title} 외 ${order.orderInfos.length - 1}건` 
-                    : product.title)
-                : "상품 정보 없음"
-              const image = product?.image || "/placeholder.svg"
-
-              return (
-                <li key={order.id} className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{formatDate(order.createdAt)}</span>
-                    <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
-                  </div>
-                  <div className="mt-3 flex gap-3">
-                    <img
-                      src={image}
-                      alt={title}
-                      className="h-16 w-16 flex-shrink-0 rounded-lg border border-border object-cover"
-                    />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate text-sm font-medium text-foreground">{title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">주문번호 {order.id}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                    <span className="text-xs text-muted-foreground">결제 금액</span>
-                    <span className="text-sm font-bold text-foreground">{formatKRW(order.totalPrice || order.amount || 0)}</span>
-                  </div>
-                  {order.status === "PAID" && (
-                    <div className="mt-3 flex justify-end border-t border-border pt-3">
-                      <button
-                        onClick={() => handleConfirmPurchase(order.id)}
-                        disabled={submitting}
-                        className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-                      >
-                        구매확정
-                      </button>
-                    </div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </PageContainer>
+      <PageContainer>{ordersList}</PageContainer>
     </>
   )
 }
