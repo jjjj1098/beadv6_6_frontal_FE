@@ -127,9 +127,12 @@ export default function AuctionDetailPage() {
 
   const handleBid = async () => {
     if (!isAuthenticated) { navigate("/login"); return }
-    setBidError(null); setBidSuccess(null); setSubmitting(true)
+    setBidError(null); setBidSuccess(null)
     const amount = Number(bidAmount)
-    if (!amount || amount <= 0) { setBidError("입찰 금액을 입력하세요"); setSubmitting(false); return }
+    if (!amount || amount <= 0) { setBidError("입찰 금액을 입력하세요"); return }
+    if (amount < minBid) { setBidError(`최소 입찰가는 ${formatKRW(minBid)}입니다`); return }
+    if (!Number.isInteger(amount)) { setBidError("입찰 금액은 정수만 가능합니다"); return }
+    setSubmitting(true)
     try {
       const result = await placeBid(auctionId, amount)
       setBidSuccess(`입찰 성공! ${formatKRW(result.currentBid)}`)

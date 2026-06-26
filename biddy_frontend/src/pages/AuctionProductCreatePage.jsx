@@ -13,6 +13,11 @@ function defaultEndsAt() {
   return d.toISOString().slice(0, 16)
 }
 
+function ErrorMsg({ msg }) {
+  if (!msg) return null
+  return <p className="mt-1 text-xs text-red-500">{msg}</p>
+}
+
 export default function AuctionProductCreatePage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -28,12 +33,29 @@ export default function AuctionProductCreatePage() {
   })
   const [imageFiles, setImageFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [submitError, setSubmitError] = useState(null)
 
-  const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const update = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }))
+    setErrors((prev) => ({ ...prev, [key]: null }))
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.title.trim()) e.title = "상품명을 입력하세요"
+    if (!form.startPrice || Number(form.startPrice) <= 0) e.startPrice = "시작가는 0보다 커야 합니다"
+    if (!form.minIncrement || Number(form.minIncrement) <= 0) e.minIncrement = "최소 입찰 단위는 0보다 커야 합니다"
+    if (!form.endsAt) e.endsAt = "종료일시를 선택하세요"
+    else if (new Date(form.endsAt) <= new Date()) e.endsAt = "종료일시는 현재 시각 이후여야 합니다"
+    if (!form.description.trim()) e.description = "상품 설명을 입력하세요"
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   const handleSubmit = async () => {
-    if (!form.title) { alert("상품명을 입력하세요"); return }
-    if (!form.startPrice) { alert("시작가를 입력하세요"); return }
+    setSubmitError(null)
+    if (!validate()) return
     setSubmitting(true)
     try {
       const created = await createAuctionProduct({
@@ -48,14 +70,16 @@ export default function AuctionProductCreatePage() {
       if (imageFiles.length > 0) {
         await uploadProductImages(created.id, imageFiles)
       }
-      alert("경매 상품 등록 성공!")
       navigate("/")
     } catch (err) {
-      alert("등록 실패: " + err.message)
+      setSubmitError(err.message || "등록에 실패했습니다")
     } finally {
       setSubmitting(false)
     }
   }
+
+  const inputCls = (key) =>
+    `rounded-lg bg-card px-3 py-2.5 ring-1 ${errors[key] ? "ring-red-500" : "ring-border"}`
 
   return (
     <PageContainer>
@@ -67,6 +91,10 @@ export default function AuctionProductCreatePage() {
         등록 시 Kafka로 경매 등록 이벤트가 발행됩니다.
       </div>
 
+      {submitError && (
+        <div className="mt-3 rounded-xl bg-red-500/10 px-3.5 py-3 text-sm text-red-500">{submitError}</div>
+      )}
+
       <div className="flex flex-col gap-4 pt-4 pb-28">
         <Field label="상품 이미지" hint="최대 5장">
           <ImageUploader onFilesChange={setImageFiles} />
@@ -74,7 +102,8 @@ export default function AuctionProductCreatePage() {
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-semibold text-foreground">상품명 *</label>
-          <input value={form.title} onChange={update("title")} placeholder="상품명을 입력하세요" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+          <input value={form.title} onChange={update("title")} placeholder="상품명을 입력하세요" className={inputCls("title")} />
+          <ErrorMsg msg={errors.title} />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -83,24 +112,28 @@ export default function AuctionProductCreatePage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-foreground">상품 설명</label>
-          <textarea value={form.description} onChange={update("description")} rows={4} placeholder="상품의 상태, 구성품 등을 자세히 적어주세요." className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+          <label className="text-sm font-semibold text-foreground">상품 설명 *</label>
+          <textarea value={form.description} onChange={update("description")} rows={4} placeholder="상품의 상태, 구성품 등을 자세히 적어주세요." className={inputCls("description")} />
+          <ErrorMsg msg={errors.description} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold text-foreground">시작가 *</label>
-            <input value={form.startPrice} onChange={update("startPrice")} type="number" placeholder="5000" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+            <input value={form.startPrice} onChange={update("startPrice")} type="number" placeholder="5000" className={inputCls("startPrice")} />
+            <ErrorMsg msg={errors.startPrice} />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold text-foreground">최소 입찰 단위</label>
-            <input value={form.minIncrement} onChange={update("minIncrement")} type="number" placeholder="500" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+            <label className="text-sm font-semibold text-foreground">최소 입찰 단위 *</label>
+            <input value={form.minIncrement} onChange={update("minIncrement")} type="number" placeholder="500" className={inputCls("minIncrement")} />
+            <ErrorMsg msg={errors.minIncrement} />
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-foreground">경매 종료일시</label>
-          <input value={form.endsAt} onChange={update("endsAt")} type="datetime-local" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+          <label className="text-sm font-semibold text-foreground">경매 종료일시 *</label>
+          <input value={form.endsAt} onChange={update("endsAt")} type="datetime-local" className={inputCls("endsAt")} />
+          <ErrorMsg msg={errors.endsAt} />
         </div>
 
         <div className="flex flex-col gap-1">
