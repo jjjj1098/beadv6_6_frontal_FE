@@ -8,6 +8,18 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
     proxy: {
+      "/api/v1/auctions": {
+        target: "http://localhost:8084",
+        changeOrigin: true,
+      },
+      "/api/v1/members/me": {
+        target: "http://localhost:8084",
+        changeOrigin: true,
+      },
+      "/ws": {
+        target: "ws://localhost:8084",
+        ws: true,
+      },
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,

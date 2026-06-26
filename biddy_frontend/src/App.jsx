@@ -8,6 +8,10 @@ import ProductCreateTypePage from "./pages/ProductCreateTypePage"
 import ProductEditPage from "./pages/ProductEditPage"
 import NormalProductCreatePage from "./pages/NormalProductCreatePage"
 import AuctionProductCreatePage from "./pages/AuctionProductCreatePage"
+import AuctionFeedPage from "./pages/AuctionFeedPage"
+import AuctionDetailPage from "./pages/AuctionDetailPage"
+import MyWatchesPage from "./pages/MyWatchesPage"
+import MyBidsPage from "./pages/MyBidsPage"
 import CartPage from "./pages/CartPage"
 import OrderPage from "./pages/OrderPage"
 import WalletPage from "./pages/WalletPage"
@@ -151,6 +155,10 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/auctions" element={<ProtectedRoute><AuctionFeedPage /></ProtectedRoute>} />
+        <Route path="/auctions/:auctionId" element={<ProtectedRoute><AuctionDetailPage /></ProtectedRoute>} />
+        <Route path="/my/watches" element={<ProtectedRoute><MyWatchesPage /></ProtectedRoute>} />
+        <Route path="/my/bids" element={<ProtectedRoute><MyBidsPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
