@@ -16,7 +16,7 @@ const SALE_TYPES = [
   { key: "auction", label: "경매(AUCTION)" },
 ]
 
-function AuctionCard({ auction, isWatched, onClick }) {
+function AuctionCard({ auction, productName, isWatched, onClick }) {
   const isLive = auction.status === "LIVE"
   const remaining = isLive ? timeLeft(new Date(auction.endsAt).getTime()) : null
 
@@ -25,7 +25,7 @@ function AuctionCard({ auction, isWatched, onClick }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-foreground">{auction.auctionId}</span>
+            <span className="text-sm font-bold text-foreground">{productName || auction.auctionId}</span>
             <StatusBadge variant={isLive ? "auction" : "neutral"}>
               {isLive ? "경매중" : "종료"}
             </StatusBadge>
@@ -54,6 +54,7 @@ function AuctionFeedInline() {
   const [auctions, setAuctions] = useState([])
   const [loading, setLoading] = useState(true)
   const [watchedIds, setWatchedIds] = useState(new Set())
+  const [productNames, setProductNames] = useState({})
   const [statusFilter, setStatusFilter] = useState("")
   const [sort, setSort] = useState("latest")
 
@@ -63,6 +64,15 @@ function AuctionFeedInline() {
       if (data?.content) setWatchedIds(new Set(data.content.map((w) => w.auctionId)))
     }).catch(() => {})
   }, [isAuthenticated])
+
+  useEffect(() => {
+    fetchProducts({ saleType: "auction" })
+      .then((products) => {
+        const map = {}
+        products.forEach((p) => { map[p.id] = p.title })
+        setProductNames(map)
+      }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -100,7 +110,8 @@ function AuctionFeedInline() {
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">경매가 없습니다</p>
         ) : (
           auctions.map((a) => (
-            <AuctionCard key={a.auctionId} auction={a} isWatched={watchedIds.has(a.auctionId)}
+            <AuctionCard key={a.auctionId} auction={a} productName={productNames[a.productId]}
+              isWatched={watchedIds.has(a.auctionId)}
               onClick={() => navigate(`/auctions/${a.auctionId}`)} />
           ))
         )}
