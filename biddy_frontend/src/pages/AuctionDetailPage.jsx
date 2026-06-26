@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Clock, Gavel, Heart, ArrowLeft, Trophy, Users, ShieldCheck, Star } from "lucide-react"
+import { Clock, Gavel, Heart, Trophy, Users, ShieldCheck } from "lucide-react"
+import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import StatusBadge from "../components/StatusBadge"
 import PriceText from "../components/PriceText"
@@ -145,9 +146,10 @@ export default function AuctionDetailPage() {
 
   if (loading) {
     return (
-      <PageContainer noPadX withTabBar={false}>
-        <div className="px-4 pt-12">
-          <div className="aspect-video w-full animate-pulse rounded-2xl bg-muted" />
+      <PageContainer noPadX>
+        <Header showBack title="경매 상세" />
+        <div className="px-4 pt-4">
+          <div className="aspect-square w-full animate-pulse rounded-2xl bg-muted" />
           <div className="mt-4 h-6 w-2/3 animate-pulse rounded bg-muted" />
         </div>
       </PageContainer>
@@ -156,10 +158,11 @@ export default function AuctionDetailPage() {
 
   if (error || !auction) {
     return (
-      <PageContainer noPadX withTabBar={false}>
+      <PageContainer noPadX>
+        <Header showBack title="경매 상세" />
         <div className="flex flex-col items-center gap-3 py-24 text-center">
           <p className="text-sm text-red-500">{error || "경매를 찾을 수 없습니다"}</p>
-          <button onClick={() => navigate("/auctions")} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-teal-foreground">목록으로</button>
+          <button onClick={() => navigate("/")} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-teal-foreground">목록으로</button>
         </div>
       </PageContainer>
     )
@@ -169,28 +172,26 @@ export default function AuctionDetailPage() {
   const minBid = (auction.currentBid || 0) + (auction.minIncrement || 0)
 
   return (
-    <PageContainer noPadX withTabBar={false}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => navigate(-1)} className="grid h-9 w-9 place-items-center rounded-full ring-1 ring-border">
-          <ArrowLeft size={18} />
-        </button>
-        <h1 className="flex-1 text-base font-bold text-foreground">경매 상세</h1>
-        {isLive && (
-          <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
-            ws.connected ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
-          }`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${ws.connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-            {ws.connected ? "LIVE" : "OFF"}
-          </span>
-        )}
-        <button onClick={handleWatch} className="grid h-9 w-9 place-items-center rounded-full bg-card ring-1 ring-border">
-          <Heart size={18} className={watching ? "fill-red-500 text-red-500" : "text-red-400"} />
-        </button>
-      </div>
+    <PageContainer noPadX>
+      <Header showBack title="경매 상세" right={
+        <div className="flex items-center gap-1">
+          {isLive && (
+            <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
+              ws.connected ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${ws.connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+              {ws.connected ? "LIVE" : "OFF"}
+            </span>
+          )}
+          <button onClick={handleWatch} className="grid h-9 w-9 place-items-center rounded-full hover:bg-graydark">
+            <Heart size={18} className={watching ? "fill-red-500 text-red-500" : "text-dark-foreground"} />
+          </button>
+        </div>
+      } />
+      <div className="mx-auto w-full max-w-md">
 
       {/* Image */}
-      <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-gray-700 to-gray-900">
+      <div className="aspect-square w-full overflow-hidden bg-gradient-to-br from-gray-700 to-gray-900">
         {product?.image && product.image !== "/images/placeholder.png" ? (
           <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
         ) : (
@@ -347,6 +348,7 @@ export default function AuctionDetailPage() {
       )}
 
       <BidHistoryModal auctionId={auctionId} open={showHistory} onClose={() => setShowHistory(false)} />
+      </div>
     </PageContainer>
   )
 }
