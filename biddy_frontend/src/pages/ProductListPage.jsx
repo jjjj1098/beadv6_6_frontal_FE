@@ -4,6 +4,7 @@ import { Plus } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchProducts, deleteProduct } from "../api/productApi"
+import { findAuctionByProductId } from "../api/auctionApi"
 
 const SALE_TYPES = [
   { key: "all", label: "전체" },
@@ -112,7 +113,14 @@ export default function ProductListPage() {
 
               <div className="mt-2 flex gap-2">
                 <button
-                  onClick={() => navigate(`/products/${p.id}`)}
+                  onClick={async () => {
+                    if (p.type === "auction") {
+                      const auction = await findAuctionByProductId(p.id)
+                      if (auction) { navigate(`/auctions/${auction.auctionId}`); return }
+                      navigate("/auctions"); return
+                    }
+                    navigate(`/products/${p.id}`)
+                  }}
                   className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
                 >
                   상세

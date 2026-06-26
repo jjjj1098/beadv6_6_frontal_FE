@@ -38,6 +38,12 @@ export async function closeAuction(auctionId) {
   return apiPost(`/auctions/${auctionId}/close`)
 }
 
+export async function findAuctionByProductId(productId) {
+  const data = await apiGet(`/auctions?page=0&size=100`)
+  const match = data?.content?.find((a) => String(a.productId) === String(productId))
+  return match || null
+}
+
 // 경매 상품 등록은 Product API 사용
 export function createAuctionProduct(payload) {
   return mockRequest("/auctions", { data: { id: `a_${Date.now()}`, type: "auction", ...payload } })
