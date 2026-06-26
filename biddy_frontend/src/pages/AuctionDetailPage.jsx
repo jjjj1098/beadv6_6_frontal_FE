@@ -252,13 +252,13 @@ export default function AuctionDetailPage() {
         )}
 
         {/* Seller Card */}
-        {product?.seller && (
+        {product && (
           <div className="mt-4 flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
             <div className="grid h-11 w-11 place-items-center rounded-full bg-dark text-dark-foreground font-bold">
-              {product.seller.name?.slice(0, 1) || "판"}
+              판
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">{product.seller.name}</p>
+              <p className="truncate text-sm font-semibold text-foreground">{product.seller?.name || "판매자"}</p>
               <p className="text-xs text-muted-foreground">{product.category} · {product.brand}</p>
             </div>
             <ShieldCheck size={20} className="text-teal" />
@@ -280,7 +280,6 @@ export default function AuctionDetailPage() {
         {/* Info Rows */}
         <div className="mt-3 space-y-2">
           {[
-            ["경매 ID", auction.auctionId],
             ["카테고리", product?.category || "-"],
             ["브랜드", product?.brand || "-"],
             ["종료 시각", new Date(auction.endsAt).toLocaleString("ko-KR")],
