@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom"
-import { ChevronLeft, ShoppingCart, Bell, LogOut, User } from "lucide-react"
+import { ChevronLeft, ShoppingCart, Bell, LogOut, User, Shield } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 
 export default function Header({ title, showBack = false, showCart = true, right = null }) {
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, isAdmin } = useAuth()
 
   return (
     <header className="sticky top-0 z-30 bg-dark text-dark-foreground">
@@ -51,6 +51,15 @@ export default function Header({ title, showBack = false, showCart = true, right
           >
             <User size={20} />
           </button>
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/admin")}
+              aria-label="관리자 페이지"
+              className="grid h-9 w-9 place-items-center rounded-full hover:bg-graydark"
+            >
+              <Shield size={20} />
+            </button>
+          )}
           {showCart && (
             <>
               <button
