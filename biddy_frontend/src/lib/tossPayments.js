@@ -57,7 +57,7 @@ export async function requestDepositPayment(amount) {
   })
 }
 
-export async function requestOrderPayment({ orderId, amount, orderName }) {
+export async function requestOrderPayment({ orderId, amount, orderName, cartItemIds }) {
   const payment = await createPaymentClient()
   const tossOrderId = `order-${orderId}-${Date.now()}-${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`
 
@@ -67,6 +67,7 @@ export async function requestOrderPayment({ orderId, amount, orderName }) {
       orderId,
       tossOrderId,
       amount,
+      cartItemIds,
       createdAt: new Date().toISOString(),
     }),
   )

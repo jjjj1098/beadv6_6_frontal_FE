@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react"
 import { confirmPayment } from "../api/paymentApi"
-import { cleanCart } from "../api/cartApi"
+import { removeCartItem } from "../api/cartApi"
 import { formatKRW } from "../lib/format"
 import PageContainer from "../components/PageContainer"
 import Header from "../components/Header"
@@ -63,9 +63,17 @@ export default function PaymentSuccessPage() {
         setPaymentDetails(res)
         setStatus("success")
         window.localStorage.removeItem(`${PENDING_ORDER_PAYMENT_PREFIX}${tossOrderId}`)
-        cleanCart().catch((cartErr) => {
-          console.error("결제 성공 후 장바구니 비우기 실패:", cartErr)
-        })
+        if (pending && pending.cartItemIds && pending.cartItemIds.length > 0) {
+          Promise.all(
+            pending.cartItemIds.map((id) =>
+              removeCartItem(id).catch((err) =>
+                console.error("Failed to remove cart item:", err),
+              ),
+            ),
+          ).catch((cartErr) => {
+            console.error("결제 성공 후 장바구니 아이템 삭제 실패:", cartErr)
+          })
+        }
       })
       .catch((err) => {
         console.error("결제 승인 오류:", err)

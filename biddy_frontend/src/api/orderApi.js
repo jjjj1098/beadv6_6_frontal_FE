@@ -16,3 +16,9 @@ export function startPaymentProcessing(orderId) {
     method: "PATCH",
   })
 }
+
+export function completeOrder(orderId) {
+  return apiRequest(`/order/complete?orderId=${orderId}`, {
+    method: "PUT",
+  })
+}
