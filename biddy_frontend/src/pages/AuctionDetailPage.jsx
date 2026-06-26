@@ -174,19 +174,14 @@ export default function AuctionDetailPage() {
   return (
     <PageContainer noPadX>
       <Header showBack title="경매 상세" right={
-        <div className="flex items-center gap-1">
-          {isLive && (
-            <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
-              ws.connected ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${ws.connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-              {ws.connected ? "LIVE" : "OFF"}
-            </span>
-          )}
-          <button onClick={handleWatch} className="grid h-9 w-9 place-items-center rounded-full hover:bg-graydark">
-            <Heart size={18} className={watching ? "fill-red-500 text-red-500" : "text-dark-foreground"} />
-          </button>
-        </div>
+        isLive ? (
+          <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
+            ws.connected ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${ws.connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+            {ws.connected ? "LIVE" : "OFF"}
+          </span>
+        ) : null
       } />
       <div className="mx-auto w-full max-w-md">
 
