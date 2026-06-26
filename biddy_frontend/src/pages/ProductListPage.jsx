@@ -73,23 +73,26 @@ function AuctionFeedInline() {
 
   return (
     <>
-      <div className="flex gap-2 px-4 pt-3">
-        {[["", "전체"], ["LIVE", "진행중"], ["ENDED", "종료"]].map(([val, label]) => (
-          <button key={val} onClick={() => setStatusFilter(val)}
-            className={`flex-1 rounded-full py-2 text-sm font-semibold ${
-              statusFilter === val ? "bg-dark text-dark-foreground" : "bg-card text-foreground ring-1 ring-border"
-            }`}>{label}</button>
-        ))}
+      {/* 상태 + 정렬 한 줄 */}
+      <div className="flex items-center gap-2 px-4 pt-3">
+        <div className="flex gap-1">
+          {[["", "전체"], ["LIVE", "진행중"], ["ENDED", "종료"]].map(([val, label]) => (
+            <button key={val} onClick={() => setStatusFilter(val)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                statusFilter === val ? "bg-teal text-teal-foreground" : "bg-card text-muted-foreground ring-1 ring-border"
+              }`}>{label}</button>
+          ))}
+        </div>
+        <div className="ml-auto">
+          <select value={sort} onChange={(e) => setSort(e.target.value)}
+            className="rounded-lg bg-card px-2 py-1.5 text-xs font-medium text-foreground ring-1 ring-border outline-none">
+            <option value="latest">최신순</option>
+            <option value="ending">마감임박</option>
+            <option value="price">높은가격</option>
+          </select>
+        </div>
       </div>
-      <div className="flex gap-2 px-4 pt-2">
-        {[["latest", "최신순"], ["ending", "마감임박"], ["price", "높은가격"]].map(([val, label]) => (
-          <button key={val} onClick={() => setSort(val)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              sort === val ? "bg-teal text-teal-foreground" : "bg-card text-foreground ring-1 ring-border"
-            }`}>{label}</button>
-        ))}
-      </div>
-      <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-3 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading ? (
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
         ) : auctions.length === 0 ? (
