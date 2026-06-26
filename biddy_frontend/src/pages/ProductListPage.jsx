@@ -4,6 +4,7 @@ import { Plus } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchProducts, deleteProduct } from "../api/productApi"
+import { fetchMemberNickname } from "../api/memberApi"
 
 const SALE_TYPES = [
   { key: "all", label: "전체" },
@@ -18,13 +19,30 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const load = () => {
+  const load = async() => {
     setLoading(true)
     setError(null)
-    fetchProducts({ saleType })
-      .then((data) => setItems(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+    try {
+    const products = await fetchProducts({ saleType })
+    
+    // 각 상품의 판매자 닉네임을 가져와 데이터 병합
+    const productsWithNickname = await Promise.all(
+      products.map(async (p) => {
+        const nickname = await fetchMemberNickname(p.sellerId)
+        return { ...p, sellerNickname: nickname || "알 수 없음" }
+      })
+    )
+    
+    setItems(productsWithNickname)
+  } catch (err) {
+    setError(err.message)
+  } finally {
+    setLoading(false)
+  }
+    // fetchProducts({ saleType })
+    //   .then((data) => setItems(data))
+    //   .catch((err) => setError(err.message))
+    //   .finally(() => setLoading(false))
   }
 
   useEffect(() => {
@@ -106,7 +124,7 @@ export default function ProductListPage() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {p.category} · {Number(p.price).toLocaleString()}원 · 재고 {p.stock} · 상태 {p.status}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">id: {p.id}</p>
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">id: {p.sellerNickname}</p>
                 </div>
               </div>
 
