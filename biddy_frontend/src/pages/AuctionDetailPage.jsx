@@ -8,18 +8,26 @@ import PriceText from "../components/PriceText"
 import { useAuth } from "../contexts/AuthContext"
 import { fetchAuctionDetail, placeBid, fetchBidHistory, toggleWatch, closeAuction } from "../api/auctionApi"
 import { fetchProductById } from "../api/productApi"
+import { fetchNicknames } from "../api/client"
 import useAuctionWebSocket from "../hooks/useAuctionWebSocket"
 import { formatKRW, timeLeft } from "../lib/format"
 
 function BidHistoryModal({ auctionId, open, onClose }) {
   const [bids, setBids] = useState([])
+  const [names, setNames] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!open) return
     setLoading(true)
     fetchBidHistory(auctionId)
-      .then((data) => { setBids(data?.content || []); setLoading(false) })
+      .then((data) => {
+        const list = data?.content || []
+        setBids(list)
+        setLoading(false)
+        const ids = list.map((b) => b.bidder?.bidderId).filter(Boolean)
+        if (ids.length) fetchNicknames(ids).then(setNames).catch(() => {})
+      })
       .catch(() => setLoading(false))
   }, [auctionId, open])
 
@@ -41,7 +49,7 @@ function BidHistoryModal({ auctionId, open, onClose }) {
             {bids.map((bid, i) => (
               <div key={i} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
                 <div>
-                  <p className="text-sm font-medium text-foreground">입찰자 #{bid.bidder?.bidderId || "?"}</p>
+                  <p className="text-sm font-medium text-foreground">{names[bid.bidder?.bidderId] || `회원 #${bid.bidder?.bidderId || "?"}`}</p>
                   <p className="text-xs text-muted-foreground">
                     {bid.bidAt ? new Date(bid.bidAt).toLocaleString("ko-KR") : ""}
                   </p>
@@ -72,6 +80,7 @@ export default function AuctionDetailPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [watching, setWatching] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [nicknames, setNicknames] = useState({})
 
   const ws = useAuctionWebSocket(auctionId)
 
@@ -101,6 +110,8 @@ export default function AuctionDetailPage() {
             .then(setProduct)
             .catch(() => {})
         }
+        const ids = [data.sellerId, data.topBidder?.bidderId].filter(Boolean)
+        if (ids.length) fetchNicknames(ids).then(setNicknames).catch(() => {})
       })
       .catch((err) => { setError(err.message); setLoading(false) })
   }, [auctionId])
@@ -256,10 +267,10 @@ export default function AuctionDetailPage() {
         {product && (
           <div className="mt-4 flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
             <div className="grid h-11 w-11 place-items-center rounded-full bg-dark text-dark-foreground font-bold">
-              판
+              {(nicknames[auction.sellerId] || "판")[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">{product.seller?.name || "판매자"}</p>
+              <p className="truncate text-sm font-semibold text-foreground">{nicknames[auction.sellerId] || "판매자"}</p>
               <p className="text-xs text-muted-foreground">{product.category} · {product.brand}</p>
             </div>
             <ShieldCheck size={20} className="text-teal" />
@@ -272,7 +283,7 @@ export default function AuctionDetailPage() {
             <div className="grid h-10 w-10 place-items-center rounded-full bg-teal text-teal-foreground font-bold"><Trophy size={18} /></div>
             <div>
               <p className="text-sm font-semibold text-foreground">최고 입찰자</p>
-              <p className="text-xs text-muted-foreground">입찰자 #{auction.topBidder.bidderId}</p>
+              <p className="text-xs text-muted-foreground">{nicknames[auction.topBidder.bidderId] || `회원 #${auction.topBidder.bidderId}`}</p>
             </div>
             <PriceText value={auction.topBidder.amount} size="sm" className="ml-auto text-teal" />
           </div>

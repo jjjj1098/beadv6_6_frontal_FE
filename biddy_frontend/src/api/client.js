@@ -68,6 +68,36 @@ export function mockRequest(path, { data, delay = 350 } = {}) {
   })
 }
 
+// 회원 닉네임 캐시
+const nicknameCache = {}
+
+export async function fetchNickname(memberId) {
+  if (!memberId) return null
+  if (nicknameCache[memberId]) return nicknameCache[memberId]
+  try {
+    const res = await fetch(`${API_BASE_URL}/members/${memberId}/nickname`, { headers: getAuthHeaders() })
+    if (res.ok) {
+      const text = await res.text()
+      if (text) {
+        const data = JSON.parse(text)
+        const name = data.nickname || data.name || null
+        if (name) { nicknameCache[memberId] = name; return name }
+      }
+    }
+  } catch {}
+  return null
+}
+
+export async function fetchNicknames(memberIds) {
+  const unique = [...new Set(memberIds.filter(Boolean))]
+  const results = {}
+  await Promise.all(unique.map(async (id) => {
+    const name = await fetchNickname(id)
+    results[id] = name || `회원 #${id}`
+  }))
+  return results
+}
+
 // Auction Service 전용 API (Gateway 경유, /api/v1 prefix)
 const AUCTION_API_BASE = "http://localhost:8000/api/v1"
 
