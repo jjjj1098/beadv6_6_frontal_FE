@@ -326,20 +326,22 @@ export default function AuctionDetailPage() {
 
       {/* Sticky Bid Bar */}
       {isLive && (
-        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
-          {bidError && <p className="mb-2 text-center text-xs font-medium text-red-500">{bidError}</p>}
-          {bidSuccess && <p className="mb-2 text-center text-xs font-medium text-teal">{bidSuccess}</p>}
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <input type="number" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)}
-                placeholder={`최소 ${formatKRW(minBid)}`}
-                className="w-full rounded-xl bg-muted px-3 py-3 text-sm font-medium text-foreground outline-none ring-1 ring-border focus:ring-teal" />
-              <p className="mt-1 text-xs text-muted-foreground">최소 입찰가: {formatKRW(minBid)}</p>
+        <div className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card px-4 py-3">
+          <div className="mx-auto max-w-screen-xl">
+            {bidError && <p className="mb-2 text-center text-xs font-medium text-red-500">{bidError}</p>}
+            {bidSuccess && <p className="mb-2 text-center text-xs font-medium text-teal">{bidSuccess}</p>}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <input type="number" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder={`최소 ${formatKRW(minBid)}`}
+                  className="w-full rounded-xl bg-muted px-4 py-3 text-sm font-medium text-foreground outline-none ring-1 ring-border focus:ring-teal" />
+                <p className="mt-1 text-xs text-muted-foreground">최소 입찰가: {formatKRW(minBid)}</p>
+              </div>
+              <button onClick={handleBid} disabled={submitting || (remaining && remaining.ended)}
+                className="flex h-12 shrink-0 items-center gap-2 rounded-xl bg-teal px-6 font-semibold text-teal-foreground disabled:opacity-50">
+                <Gavel size={18} /> {submitting ? "처리중..." : "입찰"}
+              </button>
             </div>
-            <button onClick={handleBid} disabled={submitting || (remaining && remaining.ended)}
-              className="flex h-12 items-center gap-2 rounded-xl bg-teal px-5 font-semibold text-teal-foreground disabled:opacity-50">
-              <Gavel size={18} /> {submitting ? "처리중..." : "입찰"}
-            </button>
           </div>
         </div>
       )}
