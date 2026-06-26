@@ -19,7 +19,10 @@ export default function Header({ title, showBack = false, showCart = true, right
               <ChevronLeft size={22} />
             </button>
           ) : (
-            <span className="text-xl font-extrabold tracking-tight">
+            <span
+              onClick={() => navigate("/")}
+              className="text-xl font-extrabold tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+            >
               Bid<span className="text-teal">dy</span>
             </span>
           )}

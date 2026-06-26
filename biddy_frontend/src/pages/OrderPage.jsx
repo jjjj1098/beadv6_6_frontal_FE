@@ -4,9 +4,10 @@ import { Package, CreditCard, ShoppingBag, WalletCards } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import StatusBadge from "../components/StatusBadge"
-import { fetchOrders, createOrder } from "../api/orderApi"
-import { cleanCart } from "../api/cartApi"
+import { fetchOrders, createOrder, completeOrder } from "../api/orderApi"
+import { removeCartItem } from "../api/cartApi"
 import { createPayment, fetchDepositBalance, PAYMENT_METHOD } from "../api/paymentApi"
+import { fetchProductById } from "../api/productApi"
 import { formatKRW, formatDate } from "../lib/format"
 import { requestOrderPayment } from "../lib/tossPayments"
 
@@ -16,7 +17,7 @@ const ORDER_STATUS = {
   SHIPPING: { label: "배송 중", variant: "amber" },
   DELIVERED: { label: "배송 완료", variant: "dark" },
   CANCELLED: { label: "취소됨", variant: "neutral" },
-  COMPLETED: { label: "주문 완료", variant: "teal" },
+  COMPLETED: { label: "구매 확정", variant: "teal" },
 }
 
 export default function OrderPage() {
@@ -30,6 +31,48 @@ export default function OrderPage() {
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.WALLET)
   const [walletBalance, setWalletBalance] = useState(null)
   const [walletLoading, setWalletLoading] = useState(false)
+  const [productsMap, setProductsMap] = useState({})
+
+  // Function to load orders and their corresponding product details
+  const loadOrdersData = (active) => {
+    fetchOrders()
+      .then((data) => {
+        if (active) {
+          setOrders(data || [])
+          setLoading(false)
+
+          // Extract unique product IDs and fetch details in parallel
+          const uniqueProductIds = [
+            ...new Set(
+              (data || []).flatMap((order) => order.orderInfos?.map((info) => info.productId) || [])
+            )
+          ]
+          Promise.all(
+            uniqueProductIds.map((id) =>
+              fetchProductById(id)
+                .then((p) => ({ id, product: p }))
+                .catch(() => ({ id, product: null }))
+            )
+          ).then((results) => {
+            if (active) {
+              const map = {}
+              results.forEach(({ id, product }) => {
+                if (product) {
+                  map[id] = product
+                }
+              })
+              setProductsMap((prev) => ({ ...prev, ...map }))
+            }
+          })
+        }
+      })
+      .catch((err) => {
+        console.error("주문 목록 로드 실패:", err)
+        if (active) {
+          setLoading(false)
+        }
+      })
+  }
 
   // Load past orders only if not in checkout mode
   useEffect(() => {
@@ -39,24 +82,28 @@ export default function OrderPage() {
     }
 
     let active = true
-    fetchOrders()
-      .then((data) => {
-        if (active) {
-          setOrders(data || [])
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        console.error("주문 목록 로드 실패:", err)
-        if (active) {
-          setLoading(false)
-        }
-      })
+    loadOrdersData(active)
 
     return () => {
       active = false
     }
   }, [checkoutData])
+
+  const handleConfirmPurchase = async (orderId) => {
+    if (!window.confirm("구매확정을 진행하시겠습니까? 구매확정 시 판매자에게 정산 처리됩니다.")) return
+
+    setSubmitting(true)
+    try {
+      await completeOrder(orderId)
+      alert("구매확정이 완료되었습니다.")
+      loadOrdersData(true)
+    } catch (err) {
+      console.error("구매확정 실패:", err)
+      alert("구매확정에 실패했습니다: " + err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     if (!checkoutData) return
@@ -111,7 +158,14 @@ export default function OrderPage() {
             amount,
             paymentMethod: PAYMENT_METHOD.WALLET,
           })
-          await cleanCart()
+          // Delete only selected cart items from backend
+          await Promise.all(
+            checkoutData.items.map((item) =>
+              removeCartItem(item.id).catch((err) =>
+                console.error("Failed to remove cart item:", err),
+              ),
+            ),
+          )
           alert("예치금 결제가 완료되었습니다.")
           navigate("/orders", { replace: true })
           return
@@ -119,10 +173,12 @@ export default function OrderPage() {
 
         // Combine product titles for order name
         const orderName = checkoutData.items.map((item) => item.title).join(", ")
+        const cartItemIds = checkoutData.items.map((item) => item.id)
         await requestOrderPayment({
           orderId: createdOrder.id,
           amount,
           orderName,
+          cartItemIds,
         })
       }
       
@@ -270,7 +326,18 @@ export default function OrderPage() {
         ) : (
           <ul className="flex flex-col gap-3 py-4 pb-24">
             {orders.map((order) => {
-              const status = ORDER_STATUS[order.status] || ORDER_STATUS.COMPLETED
+              const status = ORDER_STATUS[order.status] || { label: order.status, variant: "neutral" }
+              
+              // Resolve product details from productsMap
+              const firstItem = order.orderInfos?.[0]
+              const product = firstItem ? productsMap[firstItem.productId] : null
+              const title = product 
+                ? (order.orderInfos.length > 1 
+                    ? `${product.title} 외 ${order.orderInfos.length - 1}건` 
+                    : product.title)
+                : "상품 정보 없음"
+              const image = product?.image || "/placeholder.svg"
+
               return (
                 <li key={order.id} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between">
@@ -279,12 +346,12 @@ export default function OrderPage() {
                   </div>
                   <div className="mt-3 flex gap-3">
                     <img
-                      src={order.image || "/placeholder.svg"}
-                      alt={order.title || "주문 상품"}
+                      src={image}
+                      alt={title}
                       className="h-16 w-16 flex-shrink-0 rounded-lg border border-border object-cover"
                     />
                     <div className="flex min-w-0 flex-1 flex-col justify-center">
-                      <p className="truncate text-sm font-medium text-foreground">{order.title || "상품 정보 없음"}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{title}</p>
                       <p className="mt-1 text-xs text-muted-foreground">주문번호 {order.id}</p>
                     </div>
                   </div>
@@ -292,6 +359,17 @@ export default function OrderPage() {
                     <span className="text-xs text-muted-foreground">결제 금액</span>
                     <span className="text-sm font-bold text-foreground">{formatKRW(order.totalPrice || order.amount || 0)}</span>
                   </div>
+                  {order.status === "PAID" && (
+                    <div className="mt-3 flex justify-end border-t border-border pt-3">
+                      <button
+                        onClick={() => handleConfirmPurchase(order.id)}
+                        disabled={submitting}
+                        className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        구매확정
+                      </button>
+                    </div>
+                  )}
                 </li>
               )
             })}

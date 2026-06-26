@@ -34,6 +34,8 @@ export function AuthProvider({ children }) {
       if (accessToken) {
         await logoutRequest()
       }
+    } catch (error) {
+      console.warn("Server logout request failed, clearing local tokens anyway:", error)
     } finally {
       clearTokens()
       setAccessToken(null)
