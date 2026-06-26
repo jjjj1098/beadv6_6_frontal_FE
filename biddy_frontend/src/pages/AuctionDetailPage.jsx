@@ -169,6 +169,7 @@ export default function AuctionDetailPage() {
   }
 
   const isLive = auction.status === "LIVE"
+  const isSeller = user && String(user.id) === String(auction.sellerId)
   const minBid = (auction.currentBid || 0) + (auction.minIncrement || 0)
 
   return (
@@ -296,8 +297,8 @@ export default function AuctionDetailPage() {
           입찰 내역 보기
         </button>
 
-        {/* Seller Close Button */}
-        {isLive && user && String(user.id) === String(auction.sellerId) && (
+        {/* Seller Close Button (inline — 판매자만) */}
+        {isLive && isSeller && (
           <button onClick={handleClose} disabled={closing}
             className="mt-3 w-full rounded-xl bg-red-500 py-3 text-center text-sm font-bold text-white disabled:opacity-50">
             {closing ? "종료 처리 중..." : "경매 즉시 종료"}
@@ -319,8 +320,8 @@ export default function AuctionDetailPage() {
         )}
       </div>
 
-      {/* Sticky Bid Bar — 상품 상세 하단 바와 동일한 디자인 */}
-      {isLive && (
+      {/* Sticky Bottom Bar */}
+      {isLive && !isSeller && (
         <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
           {bidError && <p className="mb-2 text-center text-xs font-medium text-red-500">{bidError}</p>}
           {bidSuccess && <p className="mb-2 text-center text-xs font-medium text-teal">{bidSuccess}</p>}
@@ -340,6 +341,15 @@ export default function AuctionDetailPage() {
               {submitting ? "처리중..." : `${formatKRW(Number(bidAmount) || minBid)} 입찰`}
             </button>
           </div>
+        </div>
+      )}
+      {isLive && isSeller && (
+        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+          <p className="mb-2 text-center text-xs text-muted-foreground">내 경매 상품입니다</p>
+          <button onClick={handleClose} disabled={closing}
+            className="h-12 w-full rounded-xl bg-red-500 font-semibold text-white disabled:opacity-50">
+            {closing ? "종료 처리 중..." : "경매 즉시 종료"}
+          </button>
         </div>
       )}
 
