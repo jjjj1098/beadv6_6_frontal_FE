@@ -21,35 +21,28 @@ function AuctionCard({ auction, isWatched, onClick }) {
   const remaining = isLive ? timeLeft(new Date(auction.endsAt).getTime()) : null
 
   return (
-    <div onClick={onClick} className="cursor-pointer overflow-hidden rounded-2xl bg-card ring-1 ring-border">
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-700 to-gray-900">
-        <div className="flex h-full items-center justify-center">
-          <Gavel size={40} className="text-white/20" />
-        </div>
-        {isLive && remaining && !remaining.ended && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[11px] text-white">
-            <Clock size={11} /> {remaining.text} 남음
+    <div onClick={onClick} className="cursor-pointer rounded-xl bg-card p-3 ring-1 ring-border">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-foreground">{auction.auctionId}</span>
+            <StatusBadge variant={isLive ? "auction" : "neutral"}>
+              {isLive ? "경매중" : "종료"}
+            </StatusBadge>
+            {isWatched && <Heart size={14} className="shrink-0 fill-red-500 text-red-500" />}
           </div>
-        )}
-        <StatusBadge variant={isLive ? "auction" : "neutral"} className="absolute top-2 left-2">
-          {isLive ? "경매중" : "종료"}
-        </StatusBadge>
-        <div className={`absolute top-2 right-2 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
-          isWatched ? "bg-red-500 text-white" : "bg-black/40 text-white"
-        }`}>
-          <Heart size={11} className={isWatched ? "fill-white" : ""} /> {auction.watcherCount}
+          <p className="mt-1 text-xs text-muted-foreground">
+            현재 {auction.currentBid?.toLocaleString()}원 · 시작가 {auction.startPrice?.toLocaleString()}원
+          </p>
+          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground/70">
+            <span className="flex items-center gap-0.5"><Gavel size={10} /> {auction.bidCount}회</span>
+            <span className="flex items-center gap-0.5"><Heart size={10} /> {auction.watcherCount}</span>
+            {isLive && remaining && !remaining.ended && (
+              <span className="flex items-center gap-0.5"><Clock size={10} /> {remaining.text}</span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="p-3">
-        <p className="text-xs text-muted-foreground">ID: {auction.auctionId}</p>
-        <div className="mt-1 flex items-baseline justify-between">
-          <span className="text-xs text-muted-foreground">현재 입찰가</span>
-          <PriceText value={auction.currentBid} size="sm" className={isLive ? "text-teal" : "text-foreground"} />
-        </div>
-        <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-          <span>시작가 {auction.startPrice?.toLocaleString()}원</span>
-          <span className="flex items-center gap-1"><Gavel size={10} /> {auction.bidCount}회</span>
-        </div>
+        <PriceText value={auction.currentBid} size="sm" className={isLive ? "text-teal" : "text-foreground"} />
       </div>
     </div>
   )
@@ -96,20 +89,18 @@ function AuctionFeedInline() {
             }`}>{label}</button>
         ))}
       </div>
-      {loading ? (
-        <div className="grid grid-cols-2 gap-3 px-4 pt-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-muted" />)}
-        </div>
-      ) : auctions.length === 0 ? (
-        <div className="py-20 text-center text-sm text-muted-foreground">경매가 없습니다</div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 px-4 pt-3 pb-24">
-          {auctions.map((a) => (
+      <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {loading ? (
+          <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
+        ) : auctions.length === 0 ? (
+          <p className="col-span-full py-10 text-center text-sm text-muted-foreground">경매가 없습니다</p>
+        ) : (
+          auctions.map((a) => (
             <AuctionCard key={a.auctionId} auction={a} isWatched={watchedIds.has(a.auctionId)}
               onClick={() => navigate(`/auctions/${a.auctionId}`)} />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </>
   )
 }
