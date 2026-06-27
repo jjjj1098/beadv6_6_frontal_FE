@@ -7,6 +7,7 @@ import StatusBadge from "../components/StatusBadge"
 import PriceText from "../components/PriceText"
 import { fetchProducts, deleteProduct } from "../api/productApi"
 import { fetchAuctionFeed, fetchMyWatches, findAuctionByProductId } from "../api/auctionApi"
+import { fetchMemberNickname } from "../api/memberApi"
 import { useAuth } from "../contexts/AuthContext"
 import { timeLeft } from "../lib/format"
 
@@ -83,7 +84,6 @@ function AuctionFeedInline() {
 
   return (
     <>
-      {/* 상태 + 정렬 한 줄 */}
       <div className="flex items-center gap-2 px-4 pt-3">
         <div className="flex gap-1">
           {[["", "전체"], ["LIVE", "진행중"], ["ENDED", "종료"]].map(([val, label]) => (
@@ -122,6 +122,7 @@ function AuctionFeedInline() {
 
 export default function ProductListPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [saleType, setSaleType] = useState("all")
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -133,14 +134,24 @@ export default function ProductListPage() {
     catch (err) { alert("삭제 실패: " + err.message) }
   }
 
-  const load = () => {
+  const load = async () => {
     if (saleType === "auction") return
     setLoading(true)
     setError(null)
-    fetchProducts({ saleType })
-      .then((data) => setItems(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+    try {
+      const products = await fetchProducts({ saleType })
+      const productsWithNickname = await Promise.all(
+        products.map(async (p) => {
+          const nickname = await fetchMemberNickname(p.sellerId)
+          return { ...p, sellerNickname: nickname || "알 수 없음" }
+        })
+      )
+      setItems(productsWithNickname)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -154,14 +165,23 @@ export default function ProductListPage() {
       <div className="px-4 pt-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">상품 목록</h2>
-          {saleType !== "auction" && (
+          <div className="flex gap-2">
             <button
-              onClick={load}
-              className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+              onClick={() => navigate("/liked")}
+              className="flex items-center gap-1 rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-white"
             >
-              새로고침
+              <Heart size={13} className="fill-white" />
+              찜 목록
             </button>
-          )}
+            {saleType !== "auction" && (
+              <button
+                onClick={load}
+                className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+              >
+                새로고침
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-3 flex gap-2 sm:w-80">
@@ -205,7 +225,7 @@ export default function ProductListPage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {p.category} · {Number(p.price).toLocaleString()}원 · 재고 {p.stock} · 상태 {p.status}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">id: {p.id}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">판매자: {p.sellerNickname}</p>
                   </div>
                 </div>
                 <div className="mt-2 flex gap-2">
@@ -220,14 +240,18 @@ export default function ProductListPage() {
                     }}
                     className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
                   >상세</button>
-                  <button
-                    onClick={() => navigate(`/products/${p.id}/edit`)}
-                    className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
-                  >수정</button>
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="flex-1 rounded-lg bg-red-500 py-1.5 text-xs font-semibold text-white"
-                  >삭제</button>
+                  {Number(p.sellerId) === Number(user?.id) && (
+                    <>
+                      <button
+                        onClick={() => navigate(`/products/${p.id}/edit`)}
+                        className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+                      >수정</button>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        className="flex-1 rounded-lg bg-red-500 py-1.5 text-xs font-semibold text-white"
+                      >삭제</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))

@@ -23,3 +23,13 @@ export function withdrawMember() {
     method: "DELETE",
   })
 }
+
+// sellerId로 닉네임 조회
+export async function fetchMemberNickname(memberId) {
+  try {
+    const res = await apiRequest(`/members/${memberId}/nickname`)
+    return res?.nickname ?? null
+  } catch {
+    return null
+  }
+}

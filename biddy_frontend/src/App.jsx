@@ -22,6 +22,7 @@ import AdminRoute from "./components/AdminRoute"
 import { DepositChargeFailPage, DepositChargeSuccessPage } from "./pages/DepositChargeResultPage"
 import PaymentSuccessPage from "./pages/PaymentSuccessPage"
 import PaymentFailPage from "./pages/PaymentFailPage"
+import LikedProductsPage from "./pages/LikedProductsPage"
 
 export default function App() {
   return (
@@ -159,6 +160,7 @@ export default function App() {
         <Route path="/auctions/:auctionId" element={<ProtectedRoute><AuctionDetailPage /></ProtectedRoute>} />
         <Route path="/my/watches" element={<ProtectedRoute><MyWatchesPage /></ProtectedRoute>} />
         <Route path="/my/bids" element={<ProtectedRoute><MyBidsPage /></ProtectedRoute>} />
+        <Route path="/liked" element={<ProtectedRoute><LikedProductsPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

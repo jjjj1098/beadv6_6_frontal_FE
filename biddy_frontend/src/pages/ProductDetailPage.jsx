@@ -5,10 +5,12 @@ import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import StatusBadge from "../components/StatusBadge"
 import PriceText from "../components/PriceText"
-import { fetchProductById } from "../api/productApi"
+import { fetchProductById, fetchIsLiked, likeProduct, unlikeProduct } from "../api/productApi"
 import { placeBid } from "../api/auctionApi"
 import { addToCart } from "../api/cartApi"
 import { formatKRW, timeLeft } from "../lib/format"
+import { useAuth } from "../contexts/AuthContext"
+import { fetchMemberNickname } from "../api/memberApi"
 
 function SellerCard({ seller }) {
   return (
@@ -28,10 +30,32 @@ function SellerCard({ seller }) {
   )
 }
 
-function NormalDetail({ product }) {
+function NormalDetail({ product, isOwner }) {
   const navigate = useNavigate()
-  const [liked, setLiked] = useState(product.liked)
+  const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
+
+  useEffect(() => {
+    if (!isOwner) {
+      fetchIsLiked(product.id).then(setLiked).catch(() => {})
+    }
+  }, [product.id, isOwner])
+
+  const handleToggleLike = async () => {
+    try {
+      if (liked) {
+        await unlikeProduct(product.id)
+        setLiked(false)
+        alert("찜이 해제되었습니다.")
+      } else {
+        await likeProduct(product.id)
+        setLiked(true)
+        alert("찜 등록되었습니다!")
+      }
+    } catch {
+      alert("찜 처리 중 오류가 발생했습니다.")
+    }
+  }
 
   const handleAdd = async () => {
     await addToCart(product.id)
@@ -57,47 +81,51 @@ function NormalDetail({ product }) {
       </div>
 
       {/* Sticky actions */}
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLiked((v) => !v)}
-            aria-label="찜하기"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl ring-1 ring-border"
-          >
-            <Heart size={22} className={liked ? "fill-teal text-teal" : "text-muted-foreground"} />
-          </button>
-          <button
-            onClick={handleAdd}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-card font-semibold text-foreground ring-1 ring-border"
-          >
-            <ShoppingCart size={18} />
-            {added ? "담김" : "장바구니"}
-          </button>
-          <button
-            onClick={() =>
-              navigate("/orders", {
-                state: {
-                  items: [
-                    {
-                      id: product.id,
-                      productId: product.id,
-                      title: product.title,
-                      price: product.price,
-                      qty: 1,
-                      image: product.image,
-                      sellerId: product.sellerId,
-                    },
-                  ],
-                  total: product.price,
-                },
-              })
-            }
-            className="h-12 flex-1 rounded-xl bg-teal font-semibold text-teal-foreground"
-          >
-            즉시구매
-          </button>
+      {!isOwner && (
+        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleLike}
+              aria-label="찜하기"
+              className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors ${
+                liked ? "bg-teal" : "ring-1 ring-border"
+              }`}
+            >
+              <Heart size={22} className={liked ? "fill-white text-white" : "text-muted-foreground"} />
+            </button>
+            <button
+              onClick={handleAdd}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-card font-semibold text-foreground ring-1 ring-border"
+            >
+              <ShoppingCart size={18} />
+              {added ? "담김" : "장바구니"}
+            </button>
+            <button
+              onClick={() =>
+                navigate("/orders", {
+                  state: {
+                    items: [
+                      {
+                        id: product.id,
+                        productId: product.id,
+                        title: product.title,
+                        price: product.price,
+                        qty: 1,
+                        image: product.image,
+                        sellerId: product.sellerId,
+                      },
+                    ],
+                    total: product.price,
+                  },
+                })
+              }
+              className="h-12 flex-1 rounded-xl bg-teal font-semibold text-teal-foreground"
+            >
+              즉시구매
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   )
 }
@@ -194,19 +222,25 @@ function AuctionDetail({ product }) {
 export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let active = true
     setLoading(true)
-    fetchProductById(id).then((data) => {
+    fetchProductById(id).then(async (data) => {
+      if (!active || !data) return
+      const nickname = await fetchMemberNickname(data.sellerId).catch(() => null)
       if (active) {
         if (data?.type === "auction") {
           navigate("/auctions", { replace: true })
           return
         }
-        setProduct(data)
+        setProduct({
+          ...data,
+          seller: { ...data.seller, name: nickname || data.seller.name },
+        })
         setLoading(false)
       }
     })
@@ -237,7 +271,10 @@ export default function ProductDetailPage() {
           <div className="aspect-square w-full overflow-hidden bg-muted">
             <img src={product.image || "/placeholder.svg"} alt={product.title} className="h-full w-full object-cover" />
           </div>
-          {product.type === "auction" ? <AuctionDetail product={product} /> : <NormalDetail product={product} />}
+          {product.type === "auction"
+            ? <AuctionDetail product={product} />
+            : <NormalDetail product={product} isOwner={Number(product.sellerId) === Number(user?.id)} />
+          }
         </>
       )}
       </div>
