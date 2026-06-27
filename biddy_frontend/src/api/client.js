@@ -99,7 +99,7 @@ export async function fetchNicknames(memberIds) {
 }
 
 // Auction Service 전용 API (Gateway 경유, /api/v1 prefix)
-const AUCTION_API_BASE = "http://localhost:8000/api/v1"
+const AUCTION_API_BASE = "/api/v1"
 
 export async function apiGet(path) {
   const headers = getAuthHeaders()
