@@ -58,8 +58,7 @@ export default function AuctionFeedPage() {
   const [sort, setSort] = useState("latest")
 
   useEffect(() => {
-    const token = window.localStorage.getItem("accessToken")
-    if (!token) return
+    if (!isAuthenticated) return
     fetchMyWatches().then((data) => {
       if (data?.content) setWatchedIds(new Set(data.content.map((w) => w.auctionId)))
     }).catch(() => {})
@@ -85,17 +84,13 @@ export default function AuctionFeedPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between px-4 pt-2">
-        <div className="flex gap-2">
-          {/* 빈 공간 — 상태 필터가 위에 있으므로 */}
-        </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value)}
-          className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border">
-          <option value="latest">최신순</option>
-          <option value="ending">마감임박</option>
-          <option value="price">높은가격</option>
-          <option value="priceAsc">낮은가격</option>
-        </select>
+      <div className="flex gap-2 px-4 pt-2">
+        {[["latest", "최신순"], ["ending", "마감임박"], ["price", "높은가격"]].map(([val, label]) => (
+          <button key={val} onClick={() => setSort(val)}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              sort === val ? "bg-teal text-teal-foreground" : "bg-card text-foreground ring-1 ring-border"
+            }`}>{label}</button>
+        ))}
       </div>
 
       {loading ? (
@@ -113,67 +108,5 @@ export default function AuctionFeedPage() {
         </div>
       )}
     </PageContainer>
-  )
-}
-
-export function AuctionFeedInline() {
-  const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
-  const [auctions, setAuctions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [watchedIds, setWatchedIds] = useState(new Set())
-  const [statusFilter, setStatusFilter] = useState("")
-  const [sort, setSort] = useState("latest")
-
-  useEffect(() => {
-    const token = window.localStorage.getItem("accessToken")
-    if (!token) return
-    fetchMyWatches().then((data) => {
-      if (data?.content) setWatchedIds(new Set(data.content.map((w) => w.auctionId)))
-    }).catch(() => {})
-  }, [isAuthenticated])
-
-  useEffect(() => {
-    setLoading(true)
-    fetchAuctionFeed({ status: statusFilter || undefined, sort })
-      .then((data) => { setAuctions(data?.content || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [statusFilter, sort])
-
-  return (
-    <>
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          {[["", "전체"], ["LIVE", "진행중"], ["ENDED", "종료"]].map(([val, label]) => (
-            <button key={val} onClick={() => setStatusFilter(val)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                statusFilter === val ? "bg-teal text-teal-foreground" : "bg-card text-foreground ring-1 ring-border"
-              }`}>{label}</button>
-          ))}
-        </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value)}
-          className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border">
-          <option value="latest">최신순</option>
-          <option value="ending">마감임박</option>
-          <option value="price">높은가격</option>
-          <option value="priceAsc">낮은가격</option>
-        </select>
-      </div>
-
-      {loading ? (
-        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />)}
-        </div>
-      ) : auctions.length === 0 ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">경매가 없습니다</div>
-      ) : (
-        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-          {auctions.map((a) => (
-            <AuctionCard key={a.auctionId} auction={a} isWatched={watchedIds.has(a.auctionId)}
-              onClick={() => navigate(`/auctions/${a.auctionId}`)} />
-          ))}
-        </div>
-      )}
-    </>
   )
 }
