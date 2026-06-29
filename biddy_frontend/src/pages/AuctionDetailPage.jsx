@@ -11,6 +11,7 @@ import { fetchProductById } from "../api/productApi"
 import { fetchNicknames } from "../api/client"
 import useAuctionWebSocket from "../hooks/useAuctionWebSocket"
 import { formatKRW, timeLeft } from "../lib/format"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 function BidHistoryModal({ auctionId, open, onClose }) {
   const [bids, setBids] = useState([])
@@ -68,6 +69,7 @@ export default function AuctionDetailPage() {
   const { auctionId } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
+  const { showToast, confirmDialog } = useFeedback()
   const [auction, setAuction] = useState(null)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -142,10 +144,21 @@ export default function AuctionDetailPage() {
   }
 
   const handleClose = async () => {
-    if (!confirm("경매를 즉시 종료하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "경매 즉시 종료",
+      message: "경매를 즉시 종료하시겠습니까?",
+      confirmText: "종료",
+      variant: "danger",
+    })
+    if (!confirmed) return
     setClosing(true)
-    try { await closeAuction(auctionId); loadAuction() }
-    catch (err) { alert(err.message) }
+    try {
+      await closeAuction(auctionId)
+      showToast({ message: "경매가 종료되었습니다.", type: "success" })
+      loadAuction()
+    } catch (err) {
+      showToast({ message: err.message, type: "error" })
+    }
     finally { setClosing(false) }
   }
 

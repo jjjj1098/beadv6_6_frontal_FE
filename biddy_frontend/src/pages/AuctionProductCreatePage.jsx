@@ -95,7 +95,7 @@ export default function AuctionProductCreatePage() {
         <div className="mt-3 rounded-xl bg-red-500/10 px-3.5 py-3 text-sm text-red-500">{submitError}</div>
       )}
 
-      <div className="flex flex-col gap-4 pt-4 pb-28">
+      <div className="flex flex-col gap-4 pt-4 pb-40">
         <Field label="상품 이미지" hint="최대 5장">
           <ImageUploader onFilesChange={setImageFiles} />
         </Field>
@@ -141,10 +141,12 @@ export default function AuctionProductCreatePage() {
           <input value={form.brand} onChange={update("brand")} placeholder="브랜드" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
         </div>
 
+      </div>
+      <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber font-semibold text-amber-foreground disabled:opacity-50"
         >
           <Gavel size={18} />
           {submitting ? "등록 중..." : "경매 상품 등록"}

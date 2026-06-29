@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { LogOut, UserX } from "lucide-react"
 import { Field, TextInput } from "../components/FormField"
 import { useAuth } from "../contexts/AuthContext"
+import { useFeedback } from "../contexts/FeedbackContext"
 import { getMyInfo, updateNickname, updatePassword, withdrawMember } from "../api/memberApi"
 
 // Rendered as the index section inside MyPageLayout's sidebar (no own Header/PageContainer).
 export default function MyPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const { showToast, confirmDialog } = useFeedback()
 
   const [info, setInfo] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -62,13 +64,19 @@ export default function MyPage() {
   }
 
   const handleWithdraw = async () => {
-    if (!window.confirm("정말 탈퇴하시겠습니까? 탈퇴는 관리자 승인 후 처리됩니다.")) return
+    const confirmed = await confirmDialog({
+      title: "회원 탈퇴 요청",
+      message: "정말 탈퇴하시겠습니까?\n탈퇴는 관리자 승인 후 처리됩니다.",
+      confirmText: "탈퇴 요청",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await withdrawMember()
       await logout()
       navigate("/login", { replace: true })
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
