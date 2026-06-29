@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom"
+import BottomTabBar from "./components/BottomTabBar"
 import ProtectedRoute from "./components/ProtectedRoute"
+import { useAuth } from "./contexts/AuthContext"
 import LoginPage from "./pages/LoginPage"
 import SignupPage from "./pages/SignupPage"
 import ProductListPage from "./pages/ProductListPage"
@@ -8,6 +10,10 @@ import ProductCreateTypePage from "./pages/ProductCreateTypePage"
 import ProductEditPage from "./pages/ProductEditPage"
 import NormalProductCreatePage from "./pages/NormalProductCreatePage"
 import AuctionProductCreatePage from "./pages/AuctionProductCreatePage"
+import AuctionFeedPage from "./pages/AuctionFeedPage"
+import AuctionDetailPage from "./pages/AuctionDetailPage"
+import MyWatchesPage from "./pages/MyWatchesPage"
+import MyBidsPage from "./pages/MyBidsPage"
 import CartPage from "./pages/CartPage"
 import OrderPage from "./pages/OrderPage"
 import WalletPage from "./pages/WalletPage"
@@ -21,6 +27,8 @@ import PaymentFailPage from "./pages/PaymentFailPage"
 import LikedProductsPage from "./pages/LikedProductsPage"
 
 export default function App() {
+  const { isAuthenticated } = useAuth()
+
   return (
     <>
       <Routes>
@@ -152,16 +160,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/liked"
-          element={
-            <ProtectedRoute>
-              <LikedProductsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/auctions" element={<ProtectedRoute><AuctionFeedPage /></ProtectedRoute>} />
+        <Route path="/auctions/:auctionId" element={<ProtectedRoute><AuctionDetailPage /></ProtectedRoute>} />
+        <Route path="/my/watches" element={<ProtectedRoute><MyWatchesPage /></ProtectedRoute>} />
+        <Route path="/my/bids" element={<ProtectedRoute><MyBidsPage /></ProtectedRoute>} />
+        <Route path="/liked" element={<ProtectedRoute><LikedProductsPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {isAuthenticated && <BottomTabBar />}
     </>
   )
 }

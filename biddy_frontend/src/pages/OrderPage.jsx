@@ -10,6 +10,7 @@ import { createPayment, fetchDepositBalance, PAYMENT_METHOD } from "../api/payme
 import { fetchProductById } from "../api/productApi"
 import { formatKRW, formatDate } from "../lib/format"
 import { requestOrderPayment } from "../lib/tossPayments"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 const ORDER_STATUS = {
   PENDING: { label: "결제 대기", variant: "amber" },
@@ -23,6 +24,7 @@ const ORDER_STATUS = {
 export default function OrderPage({ embedded = false }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast, confirmDialog } = useFeedback()
   const checkoutData = location.state // { items, total }
 
   const [orders, setOrders] = useState([])
@@ -90,16 +92,21 @@ export default function OrderPage({ embedded = false }) {
   }, [checkoutData])
 
   const handleConfirmPurchase = async (orderId) => {
-    if (!window.confirm("구매확정을 진행하시겠습니까? 구매확정 시 판매자에게 정산 처리됩니다.")) return
+    const confirmed = await confirmDialog({
+      title: "구매확정",
+      message: "구매확정을 진행하시겠습니까?\n구매확정 시 판매자에게 정산 처리됩니다.",
+      confirmText: "구매확정",
+    })
+    if (!confirmed) return
 
     setSubmitting(true)
     try {
       await completeOrder(orderId)
-      alert("구매확정이 완료되었습니다.")
+      showToast({ message: "구매확정이 완료되었습니다.", type: "success" })
       loadOrdersData(true)
     } catch (err) {
       console.error("구매확정 실패:", err)
-      alert("구매확정에 실패했습니다: " + err.message)
+      showToast({ message: "구매확정에 실패했습니다: " + err.message, type: "error" })
     } finally {
       setSubmitting(false)
     }
@@ -132,7 +139,7 @@ export default function OrderPage({ embedded = false }) {
 
     const amount = Number(checkoutData.total)
     if (paymentMethod === PAYMENT_METHOD.WALLET && walletBalance !== null && walletBalance < amount) {
-      alert("예치금 잔액이 부족합니다. 예치금을 충전하거나 Toss 결제를 선택해 주세요.")
+      showToast({ message: "예치금 잔액이 부족합니다. 예치금을 충전하거나 Toss 결제를 선택해 주세요.", type: "error" })
       return
     }
     
@@ -166,7 +173,7 @@ export default function OrderPage({ embedded = false }) {
               ),
             ),
           )
-          alert("예치금 결제가 완료되었습니다.")
+          showToast({ message: "예치금 결제가 완료되었습니다.", type: "success" })
           navigate("/orders", { replace: true })
           return
         }
@@ -184,7 +191,7 @@ export default function OrderPage({ embedded = false }) {
       
     } catch (err) {
       console.error("주문 생성 실패:", err)
-      alert("주문 처리에 실패했습니다: " + err.message)
+      showToast({ message: "주문 처리에 실패했습니다: " + err.message, type: "error" })
     } finally {
       setSubmitting(false)
     }
@@ -295,7 +302,7 @@ export default function OrderPage({ embedded = false }) {
         </div>
 
         {/* Sticky Checkout button */}
-        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+        <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
           <button
             onClick={handleCheckout}
             disabled={submitting}
@@ -325,7 +332,7 @@ export default function OrderPage({ embedded = false }) {
         </Link>
       </div>
     ) : (
-      <ul className="flex flex-col gap-3 py-4 pb-24">
+      <ul className="grid grid-cols-1 gap-3 py-4 pb-24 lg:grid-cols-2">
         {orders.map((order) => {
           const status = ORDER_STATUS[order.status] || { label: order.status, variant: "neutral" }
 
@@ -365,7 +372,7 @@ export default function OrderPage({ embedded = false }) {
                   <button
                     onClick={() => handleConfirmPurchase(order.id)}
                     disabled={submitting}
-                    className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="h-10 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     구매확정
                   </button>

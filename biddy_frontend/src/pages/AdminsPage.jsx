@@ -8,6 +8,7 @@ import {
   getMemberDeposit,
   adjustMemberDeposit,
 } from "../api/adminApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 const TABS = [
   { key: "withdrawals", label: "탈퇴 관리" },
@@ -15,6 +16,7 @@ const TABS = [
 ]
 
 export default function AdminPage() {
+  const { showToast, confirmDialog } = useFeedback()
   const [tab, setTab] = useState("withdrawals")
   const [members, setMembers] = useState([])
   const [withdrawals, setWithdrawals] = useState([])
@@ -63,19 +65,20 @@ export default function AdminPage() {
   const handleAdjustSubmit = async (memberId) => {
     const amount = Number(adjustAmount)
     if (!amount) {
-      alert("조정 금액을 입력해주세요. (양수: 충전, 음수: 차감)")
+      showToast({ message: "조정 금액을 입력해주세요. (양수: 충전, 음수: 차감)", type: "error" })
       return
     }
     if (!adjustReason.trim()) {
-      alert("조정 사유를 입력해주세요.")
+      showToast({ message: "조정 사유를 입력해주세요.", type: "error" })
       return
     }
     try {
       const result = await adjustMemberDeposit(memberId, { amount, reason: adjustReason.trim() })
       setDeposits((prev) => ({ ...prev, [memberId]: result?.balance ?? prev[memberId] }))
       closeAdjust()
+      showToast({ message: "예치금이 조정되었습니다.", type: "success" })
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
@@ -94,27 +97,41 @@ export default function AdminPage() {
   }, [tab])
 
   const handleApprove = async (memberId) => {
-    if (!window.confirm("탈퇴를 승인하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "탈퇴 승인",
+      message: "탈퇴를 승인하시겠습니까?",
+      confirmText: "승인",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await approveWithdrawal(memberId)
+      showToast({ message: "탈퇴를 승인했습니다.", type: "success" })
       loadWithdrawals()
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
   const handleBan = async (memberId) => {
-    if (!window.confirm("이 회원을 추방하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "회원 추방",
+      message: "이 회원을 추방하시겠습니까?",
+      confirmText: "추방",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await banMember(memberId)
+      showToast({ message: "회원을 추방했습니다.", type: "success" })
       loadMembers()
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
   return (
-    <PageContainer className="flex flex-col gap-5 py-6">
+    <PageContainer variant="wide" className="flex flex-col gap-5 py-6">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
       <header>
         <span className="mb-1 inline-block rounded bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
@@ -144,7 +161,7 @@ export default function AdminPage() {
         <div className="flex flex-col gap-2">
           {withdrawals.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 탈퇴 요청이 없습니다.</p>}
           {withdrawals.map((w) => (
-            <div key={w.memberId} className="flex items-center justify-between rounded-xl bg-card p-3 ring-1 ring-border">
+            <div key={w.memberId} className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-border min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">회원 ID: {w.memberId}</p>
                 <p className="text-xs text-muted-foreground">
@@ -167,7 +184,7 @@ export default function AdminPage() {
           {members.length === 0 && <p className="text-sm text-muted-foreground">회원이 없습니다.</p>}
           {members.map((m) => (
             <div key={m.id} className="flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-border">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{m.nickname}</p>
                   <p className="text-xs text-muted-foreground">{m.email}</p>
@@ -176,7 +193,7 @@ export default function AdminPage() {
                     {deposits[m.id] == null ? "조회 불가" : `${deposits[m.id].toLocaleString()}원`}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2 min-[520px]:flex">
                   <button
                     onClick={() => (adjustingId === m.id ? closeAdjust() : openAdjust(m.id))}
                     className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-teal-700 ring-1 ring-teal-200"

@@ -73,14 +73,19 @@ export default function SignupPage() {
       return
     }
 
+    const normalizedPhone = form.phone.replaceAll("-", "")
+    if (!normalizedPhone) {
+      setError("전화번호를 입력해 주세요.")
+      return
+    }
+
     setSubmitting(true)
     try {
-      const normalizedPhone = form.phone.replaceAll("-", "")
       await signup({
         email: form.email,
         password: form.password,
         nickname: form.nickname,
-        phone: normalizedPhone || undefined,
+        phone: normalizedPhone,
       })
       navigate("/login", {
         replace: true,
@@ -110,7 +115,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="이메일" required>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 min-[420px]:flex-row">
               <TextInput
                 value={form.email}
                 onChange={(e) => {
@@ -130,7 +135,7 @@ export default function SignupPage() {
                 type="button"
                 onClick={handleSendVerification}
                 disabled={emailSending || emailVerified}
-                className="flex shrink-0 items-center gap-1 rounded-xl bg-card px-3 text-sm font-semibold text-teal ring-1 ring-border disabled:opacity-50"
+                className="flex h-12 shrink-0 items-center justify-center gap-1 rounded-xl bg-card px-3 text-sm font-semibold text-teal ring-1 ring-border disabled:opacity-50"
               >
                 <Mail size={14} />
                 {emailVerified ? "인증완료" : emailSending ? "전송 중..." : emailSent ? "재전송" : "인증코드 받기"}
@@ -140,7 +145,7 @@ export default function SignupPage() {
 
           {emailSent && !emailVerified && (
             <Field label="인증 코드" required>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row">
                 <TextInput
                   value={verificationToken}
                   onChange={(e) => setVerificationToken(e.target.value)}
@@ -151,7 +156,7 @@ export default function SignupPage() {
                   type="button"
                   onClick={handleVerifyToken}
                   disabled={verifying}
-                  className="flex shrink-0 items-center gap-1 rounded-xl bg-teal px-3 text-sm font-semibold text-teal-foreground disabled:opacity-50"
+                  className="flex h-12 shrink-0 items-center justify-center gap-1 rounded-xl bg-teal px-3 text-sm font-semibold text-teal-foreground disabled:opacity-50"
                 >
                   <CheckCircle2 size={14} />
                   {verifying ? "확인 중..." : "확인"}
@@ -190,14 +195,15 @@ export default function SignupPage() {
             />
           </Field>
 
-          <Field label="전화번호" hint="숫자만 입력 가능">
+          <Field label="전화번호" required hint="숫자만 입력 가능">
             <TextInput
               value={form.phone}
               onChange={update("phone")}
               inputMode="numeric"
               autoComplete="tel"
               placeholder="01012345678"
-              pattern="\\d{10,11}"
+              pattern="\d{10,11}"
+              required
             />
           </Field>
 

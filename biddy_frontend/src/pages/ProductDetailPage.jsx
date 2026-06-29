@@ -11,6 +11,7 @@ import { addToCart } from "../api/cartApi"
 import { formatKRW, timeLeft } from "../lib/format"
 import { useAuth } from "../contexts/AuthContext"
 import { fetchMemberNickname } from "../api/memberApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 function SellerCard({ seller }) {
   return (
@@ -32,6 +33,7 @@ function SellerCard({ seller }) {
 
 function NormalDetail({ product, isOwner }) {
   const navigate = useNavigate()
+  const { showToast } = useFeedback()
   const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
 
@@ -46,14 +48,14 @@ function NormalDetail({ product, isOwner }) {
       if (liked) {
         await unlikeProduct(product.id)
         setLiked(false)
-        alert("찜이 해제되었습니다.")
+        showToast({ message: "찜이 해제되었습니다.", type: "success" })
       } else {
         await likeProduct(product.id)
         setLiked(true)
-        alert("찜 등록되었습니다!")
+        showToast({ message: "찜 등록되었습니다.", type: "success" })
       }
     } catch {
-      alert("찜 처리 중 오류가 발생했습니다.")
+      showToast({ message: "찜 처리 중 오류가 발생했습니다.", type: "error" })
     }
   }
 
@@ -88,7 +90,7 @@ function NormalDetail({ product, isOwner }) {
               onClick={handleToggleLike}
               aria-label="찜하기"
               className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors ${
-                liked ? "bg-teal" : "ring-1 ring-border"
+                liked ? "bg-teal" : "bg-background ring-1 ring-border"
               }`}
             >
               <Heart size={22} className={liked ? "fill-white text-white" : "text-muted-foreground"} />
@@ -234,6 +236,10 @@ export default function ProductDetailPage() {
       if (!active || !data) return
       const nickname = await fetchMemberNickname(data.sellerId).catch(() => null)
       if (active) {
+        if (data?.type === "auction") {
+          navigate("/auctions", { replace: true })
+          return
+        }
         setProduct({
           ...data,
           seller: { ...data.seller, name: nickname || data.seller.name },
@@ -244,7 +250,7 @@ export default function ProductDetailPage() {
     return () => {
       active = false
     }
-  }, [id])
+  }, [id, navigate])
 
   return (
     <PageContainer noPadX>
