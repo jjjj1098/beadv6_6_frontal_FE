@@ -49,6 +49,7 @@ export default function AuctionProductCreatePage() {
     if (!form.endsAt) e.endsAt = "종료일시를 선택하세요"
     else if (new Date(form.endsAt) <= new Date()) e.endsAt = "종료일시는 현재 시각 이후여야 합니다"
     if (!form.description.trim()) e.description = "상품 설명을 입력하세요"
+    if (imageFiles.length === 0) e.image = "상품 이미지를 1장 이상 등록하세요"
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -97,8 +98,9 @@ export default function AuctionProductCreatePage() {
       )}
 
       <div className="flex flex-col gap-4 pt-4 pb-40">
-        <Field label="상품 이미지" hint="최대 5장">
-          <ImageUploader onFilesChange={setImageFiles} />
+        <Field label="상품 이미지 *" hint="최대 5장">
+          <ImageUploader onFilesChange={(files) => { setImageFiles(files); setErrors((prev) => ({ ...prev, image: null })) }} />
+          <ErrorMsg msg={errors.image} />
         </Field>
 
         <div className="flex flex-col gap-1">
