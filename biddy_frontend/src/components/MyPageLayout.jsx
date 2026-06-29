@@ -16,9 +16,9 @@ export default function MyPageLayout() {
     <>
       <Header title="마이페이지" showCart={false} />
       <PageContainer noPadX>
-        <div className="flex flex-col gap-6 px-4 py-6 sm:flex-row">
-          <aside className="w-full shrink-0 sm:w-52">
-            <nav className="flex gap-1 overflow-x-auto rounded-xl bg-card p-2 ring-1 ring-border sm:flex-col sm:overflow-visible">
+        <div className="flex flex-col gap-6 px-4 py-6 lg:flex-row">
+          <aside className="w-full shrink-0 lg:w-52">
+            <nav className="flex gap-1 overflow-x-auto rounded-xl bg-card p-2 ring-1 ring-border lg:flex-col lg:overflow-visible">
               {navItems.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={to}

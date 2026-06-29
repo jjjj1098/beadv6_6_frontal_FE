@@ -8,7 +8,7 @@ export default function Header({ title, showBack = false, showCart = true, right
 
   return (
     <header className="sticky top-0 z-30 bg-dark text-dark-foreground">
-      <div className="relative flex h-14 w-full items-center px-4">
+      <div className="relative mx-auto flex h-14 w-full max-w-md items-center px-4 lg:max-w-6xl">
         <div className="flex items-center gap-1">
           {title && (
             <span

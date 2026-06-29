@@ -200,7 +200,7 @@ export default function CartPage() {
       </ul>
 
       {/* Sticky total */}
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+      <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm text-muted-foreground">선택 상품 {selectedItems.length}개</span>
           <span className="text-lg font-extrabold text-foreground">{formatKRW(total)}</span>

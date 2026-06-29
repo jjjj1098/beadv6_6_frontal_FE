@@ -110,7 +110,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="이메일" required>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 min-[420px]:flex-row">
               <TextInput
                 value={form.email}
                 onChange={(e) => {
@@ -130,7 +130,7 @@ export default function SignupPage() {
                 type="button"
                 onClick={handleSendVerification}
                 disabled={emailSending || emailVerified}
-                className="flex shrink-0 items-center gap-1 rounded-xl bg-card px-3 text-sm font-semibold text-teal ring-1 ring-border disabled:opacity-50"
+                className="flex h-12 shrink-0 items-center justify-center gap-1 rounded-xl bg-card px-3 text-sm font-semibold text-teal ring-1 ring-border disabled:opacity-50"
               >
                 <Mail size={14} />
                 {emailVerified ? "인증완료" : emailSending ? "전송 중..." : emailSent ? "재전송" : "인증코드 받기"}
@@ -140,7 +140,7 @@ export default function SignupPage() {
 
           {emailSent && !emailVerified && (
             <Field label="인증 코드" required>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row">
                 <TextInput
                   value={verificationToken}
                   onChange={(e) => setVerificationToken(e.target.value)}
@@ -151,7 +151,7 @@ export default function SignupPage() {
                   type="button"
                   onClick={handleVerifyToken}
                   disabled={verifying}
-                  className="flex shrink-0 items-center gap-1 rounded-xl bg-teal px-3 text-sm font-semibold text-teal-foreground disabled:opacity-50"
+                  className="flex h-12 shrink-0 items-center justify-center gap-1 rounded-xl bg-teal px-3 text-sm font-semibold text-teal-foreground disabled:opacity-50"
                 >
                   <CheckCircle2 size={14} />
                   {verifying ? "확인 중..." : "확인"}

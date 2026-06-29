@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom"
+import BottomTabBar from "./components/BottomTabBar"
 import ProtectedRoute from "./components/ProtectedRoute"
+import { useAuth } from "./contexts/AuthContext"
 import LoginPage from "./pages/LoginPage"
 import SignupPage from "./pages/SignupPage"
 import ProductListPage from "./pages/ProductListPage"
@@ -20,6 +22,8 @@ import PaymentSuccessPage from "./pages/PaymentSuccessPage"
 import PaymentFailPage from "./pages/PaymentFailPage"
 
 export default function App() {
+  const { isAuthenticated } = useAuth()
+
   return (
     <>
       <Routes>
@@ -153,6 +157,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {isAuthenticated && <BottomTabBar />}
     </>
   )
 }

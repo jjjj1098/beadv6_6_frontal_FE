@@ -60,15 +60,7 @@ export default function ProductEditPage() {
       <Header showBack title="상품 수정" showCart={false} />
       <div className="mx-auto w-full max-w-md">
 
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="mt-3 h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
-      >
-        {submitting ? "수정 중..." : "수정 완료"}
-      </button>
-
-      <div className="flex flex-col gap-3 pt-4 pb-28">
+      <div className="flex flex-col gap-3 pt-4 pb-40">
         <label className="text-sm font-semibold text-foreground">상품명</label>
         <input value={form.title} onChange={update("title")} className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
 
@@ -94,6 +86,15 @@ export default function ProductEditPage() {
 
         <label className="text-sm font-semibold text-foreground">브랜드</label>
         <input value={form.brand} onChange={update("brand")} className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+      </div>
+      <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
+        >
+          {submitting ? "수정 중..." : "수정 완료"}
+        </button>
       </div>
       </div>
     </PageContainer>

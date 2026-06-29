@@ -62,7 +62,7 @@ function NormalDetail({ product }) {
           <button
             onClick={() => setLiked((v) => !v)}
             aria-label="찜하기"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl ring-1 ring-border"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-background ring-1 ring-border"
           >
             <Heart size={22} className={liked ? "fill-teal text-teal" : "text-muted-foreground"} />
           </button>

@@ -51,16 +51,7 @@ export default function AuctionProductCreatePage() {
         등록 시 saleType=AUCTION → Kafka로 경매 등록 이벤트가 발행됩니다.
       </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber font-semibold text-amber-foreground disabled:opacity-50"
-      >
-        <Gavel size={18} />
-        {submitting ? "등록 중..." : "경매 상품 등록 (Kafka 발행)"}
-      </button>
-
-      <div className="flex flex-col gap-3 pt-4 pb-28">
+      <div className="flex flex-col gap-3 pt-4 pb-40">
         <label className="text-sm font-semibold text-foreground">상품명</label>
         <input value={form.title} onChange={update("title")} placeholder="상품명" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
 
@@ -83,6 +74,16 @@ export default function AuctionProductCreatePage() {
 
         <label className="text-sm font-semibold text-foreground">브랜드</label>
         <input value={form.brand} onChange={update("brand")} placeholder="브랜드" className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-border" />
+      </div>
+      <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber font-semibold text-amber-foreground disabled:opacity-50"
+        >
+          <Gavel size={18} />
+          {submitting ? "등록 중..." : "경매 상품 등록"}
+        </button>
       </div>
       </div>
     </PageContainer>
