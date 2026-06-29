@@ -103,7 +103,7 @@ function AuctionFeedInline() {
           </select>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-3 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-3 px-4 pb-24 lg:grid-cols-3 xl:grid-cols-4">
         {loading ? (
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
         ) : auctions.length === 0 ? (
@@ -184,7 +184,7 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        <div className="mt-3 flex gap-2 sm:w-80">
+        <div className="mt-3 flex gap-2 lg:w-80">
           {SALE_TYPES.map((t) => (
             <button
               key={t.key}
@@ -204,7 +204,7 @@ export default function ProductListPage() {
       {saleType === "auction" ? (
         <AuctionFeedInline />
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 lg:grid-cols-3 xl:grid-cols-4">
           {loading ? (
             <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
           ) : error ? (
@@ -213,11 +213,11 @@ export default function ProductListPage() {
             <p className="col-span-full py-10 text-center text-sm text-muted-foreground">상품이 없습니다.</p>
           ) : (
             items.map((p) => (
-              <div key={p.id} className="rounded-xl bg-card p-3 ring-1 ring-border">
+              <div key={p.id} className="rounded-2xl bg-card p-3 ring-1 ring-border transition-shadow hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-foreground">{p.title}</span>
+                      <span className="truncate text-sm font-bold text-foreground">{p.title}</span>
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
                         p.type === "auction" ? "bg-amber-soft text-amber" : "bg-teal-soft text-teal"
                       }`}>{p.saleType}</span>
@@ -228,7 +228,7 @@ export default function ProductListPage() {
                     <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">판매자: {p.sellerNickname}</p>
                   </div>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className={`mt-3 grid gap-2 ${Number(p.sellerId) === Number(user?.id) ? "grid-cols-3" : "grid-cols-1"}`}>
                   <button
                     onClick={async () => {
                       if (p.type === "auction") {
@@ -238,17 +238,17 @@ export default function ProductListPage() {
                       }
                       navigate(`/products/${p.id}`)
                     }}
-                    className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+                    className="h-10 rounded-xl bg-card text-xs font-semibold text-foreground ring-1 ring-border"
                   >상세</button>
                   {Number(p.sellerId) === Number(user?.id) && (
                     <>
                       <button
                         onClick={() => navigate(`/products/${p.id}/edit`)}
-                        className="flex-1 rounded-lg bg-card py-1.5 text-xs font-semibold text-foreground ring-1 ring-border"
+                        className="h-10 rounded-xl bg-card text-xs font-semibold text-foreground ring-1 ring-border"
                       >수정</button>
                       <button
                         onClick={() => handleDelete(p.id)}
-                        className="flex-1 rounded-lg bg-red-500 py-1.5 text-xs font-semibold text-white"
+                        className="h-10 rounded-xl bg-red-500 text-xs font-semibold text-white"
                       >삭제</button>
                     </>
                   )}
@@ -258,11 +258,10 @@ export default function ProductListPage() {
           )}
         </div>
       )}
-
       <button
         onClick={() => navigate("/products/create")}
         aria-label="상품 등록"
-        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-teal text-teal-foreground shadow-lg shadow-teal/30 transition-transform hover:scale-105"
+        className="fixed bottom-20 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-teal text-teal-foreground shadow-lg shadow-teal/30 transition-transform hover:scale-105 lg:bottom-6 lg:right-6"
       >
         <Plus size={26} />
       </button>

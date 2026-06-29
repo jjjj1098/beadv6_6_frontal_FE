@@ -295,7 +295,7 @@ export default function OrderPage({ embedded = false }) {
         </div>
 
         {/* Sticky Checkout button */}
-        <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3">
+        <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
           <button
             onClick={handleCheckout}
             disabled={submitting}
@@ -325,7 +325,7 @@ export default function OrderPage({ embedded = false }) {
         </Link>
       </div>
     ) : (
-      <ul className="flex flex-col gap-3 py-4 pb-24">
+      <ul className="grid grid-cols-1 gap-3 py-4 pb-24 lg:grid-cols-2">
         {orders.map((order) => {
           const status = ORDER_STATUS[order.status] || { label: order.status, variant: "neutral" }
 
@@ -365,7 +365,7 @@ export default function OrderPage({ embedded = false }) {
                   <button
                     onClick={() => handleConfirmPurchase(order.id)}
                     disabled={submitting}
-                    className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="h-10 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     구매확정
                   </button>

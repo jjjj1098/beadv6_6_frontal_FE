@@ -140,7 +140,7 @@ export default function WalletPage({ embedded = false }) {
           {/* Charge options */}
           <div className="mt-5">
             <h2 className="text-sm font-semibold text-foreground">예치금 충전</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
               {CHARGE_OPTIONS.map((amount) => (
                 <button
                   key={amount}
@@ -160,7 +160,7 @@ export default function WalletPage({ embedded = false }) {
                 </button>
               ))}
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col gap-2 min-[420px]:flex-row">
               <div className="relative min-w-0 flex-1">
                 <input
                   type="number"
@@ -212,7 +212,7 @@ export default function WalletPage({ embedded = false }) {
                 거래 내역이 없습니다
               </div>
             ) : (
-              <ul className="mt-3 flex flex-col gap-2">
+              <ul className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
                 {history.map((item) => {
                   const isPositive = item.kind === "in"
                   return (

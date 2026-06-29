@@ -114,7 +114,7 @@ export default function AdminPage() {
   }
 
   return (
-    <PageContainer className="flex flex-col gap-5 py-6">
+    <PageContainer variant="wide" className="flex flex-col gap-5 py-6">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
       <header>
         <span className="mb-1 inline-block rounded bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
@@ -144,7 +144,7 @@ export default function AdminPage() {
         <div className="flex flex-col gap-2">
           {withdrawals.length === 0 && <p className="text-sm text-muted-foreground">대기 중인 탈퇴 요청이 없습니다.</p>}
           {withdrawals.map((w) => (
-            <div key={w.memberId} className="flex items-center justify-between rounded-xl bg-card p-3 ring-1 ring-border">
+            <div key={w.memberId} className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-border min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">회원 ID: {w.memberId}</p>
                 <p className="text-xs text-muted-foreground">
@@ -167,7 +167,7 @@ export default function AdminPage() {
           {members.length === 0 && <p className="text-sm text-muted-foreground">회원이 없습니다.</p>}
           {members.map((m) => (
             <div key={m.id} className="flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-border">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{m.nickname}</p>
                   <p className="text-xs text-muted-foreground">{m.email}</p>
@@ -176,7 +176,7 @@ export default function AdminPage() {
                     {deposits[m.id] == null ? "조회 불가" : `${deposits[m.id].toLocaleString()}원`}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2 min-[520px]:flex">
                   <button
                     onClick={() => (adjustingId === m.id ? closeAdjust() : openAdjust(m.id))}
                     className="rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-teal-700 ring-1 ring-teal-200"

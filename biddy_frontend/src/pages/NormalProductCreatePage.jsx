@@ -53,14 +53,7 @@ export default function NormalProductCreatePage() {
     <PageContainer>
       <Header showBack title="일반 판매 등록" showCart={false} />
       <div className="mx-auto w-full max-w-md">
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="mt-3 h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
-      >
-        {submitting ? "등록 중..." : "상품 등록하기"}
-      </button>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4 pb-28">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4 pb-40">
         <Field label="상품 이미지" hint="최대 5장">
           <ImageUploader onFilesChange={setImageFiles} />
         </Field>
@@ -91,6 +84,15 @@ export default function NormalProductCreatePage() {
           <Select value={form.condition} onChange={update("condition")} options={CONDITIONS} />
         </Field>
       </form>
+      <div className="fixed bottom-16 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card px-4 py-3 lg:bottom-0">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="h-12 w-full rounded-xl bg-teal font-semibold text-teal-foreground disabled:opacity-50"
+        >
+          {submitting ? "등록 중..." : "상품 등록하기"}
+        </button>
+      </div>
       </div>
     </PageContainer>
   )
