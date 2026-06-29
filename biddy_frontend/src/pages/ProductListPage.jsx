@@ -4,8 +4,10 @@ import { Plus, Heart } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchProducts, deleteProduct } from "../api/productApi"
+import { fetchAuctionFeed } from "../api/auctionApi"
 import { fetchMemberNickname } from "../api/memberApi"
 import { useAuth } from "../contexts/AuthContext"
+import { AuctionFeedInline } from "./AuctionFeedPage"
 
 const SALE_TYPES = [
   { key: "all", label: "전체" },
@@ -95,6 +97,11 @@ export default function ProductListPage() {
         </div>
       </div>
 
+      {saleType === "auction" ? (
+        <div className="mt-4 px-4 pb-24">
+          <AuctionFeedInline />
+        </div>
+      ) : (
       <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 lg:grid-cols-3 xl:grid-cols-4">
         {loading ? (
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
@@ -166,6 +173,7 @@ export default function ProductListPage() {
           ))
         )}
       </div>
+      )}
 
       <button
         onClick={() => navigate("/products/create")}
