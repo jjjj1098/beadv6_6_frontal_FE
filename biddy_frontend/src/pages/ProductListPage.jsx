@@ -127,7 +127,30 @@ export default function ProductListPage() {
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">상품이 없습니다.</p>
         ) : (
           items.map((p) => (
-            <div key={p.id} className="rounded-xl bg-card p-3 ring-1 ring-border">
+            <div key={p.id} className="rounded-xl bg-card overflow-hidden ring-1 ring-border">
+              <div className="aspect-square w-full overflow-hidden bg-muted">
+                {p.image ? (
+                  <>
+                    <img
+                      src={p.image}
+                      alt={p.title}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none"
+                        e.target.nextSibling.style.display = "flex"
+                      }}
+                    />
+                    <div className="h-full w-full items-center justify-center bg-dark" style={{ display: "none" }}>
+                      <span className="text-2xl font-bold text-teal">Biddy</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-dark">
+                    <span className="text-2xl font-bold text-teal">Biddy</span>
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -166,6 +189,7 @@ export default function ProductListPage() {
                     >삭제</button>
                   </>
                 )}
+              </div>
               </div>
             </div>
           ))
