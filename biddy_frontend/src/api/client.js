@@ -67,3 +67,71 @@ export function mockRequest(path, { data, delay = 350 } = {}) {
     setTimeout(() => resolve(structuredClone(data)), delay)
   })
 }
+
+// 회원 닉네임 캐시
+const nicknameCache = {}
+
+export async function fetchNickname(memberId) {
+  if (!memberId) return null
+  if (nicknameCache[memberId]) return nicknameCache[memberId]
+  try {
+    const res = await fetch(`${API_BASE_URL}/members/${memberId}/nickname`, { headers: getAuthHeaders() })
+    if (res.ok) {
+      const text = await res.text()
+      if (text) {
+        const data = JSON.parse(text)
+        const name = data.nickname || data.name || null
+        if (name) { nicknameCache[memberId] = name; return name }
+      }
+    }
+  } catch {}
+  return null
+}
+
+export async function fetchNicknames(memberIds) {
+  const unique = [...new Set(memberIds.filter(Boolean))]
+  const results = {}
+  await Promise.all(unique.map(async (id) => {
+    const name = await fetchNickname(id)
+    results[id] = name || `회원 #${id}`
+  }))
+  return results
+}
+
+// Auction Service 전용 API (Gateway 경유, /api/v1 prefix)
+const AUCTION_API_BASE = "/api/v1"
+
+export async function apiGet(path) {
+  const headers = getAuthHeaders()
+  const res = await fetch(`${AUCTION_API_BASE}${path}`, { headers })
+  if (res.status === 401) { window.localStorage.removeItem("accessToken"); return null }
+  if (!res.ok) throw new Error(res.statusText || `HTTP ${res.status}`)
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
+}
+
+export async function apiPost(path, body) {
+  const headers = getAuthHeaders()
+  const res = await fetch(`${AUCTION_API_BASE}${path}`, {
+    method: "POST", headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  if (res.status === 401) throw new Error("Unauthorized")
+  if (res.status === 403) throw new Error("Forbidden")
+  if (!res.ok) {
+    const text = await res.text()
+    let msg = `HTTP ${res.status}`
+    try { msg = JSON.parse(text).message || msg } catch {}
+    throw new Error(msg)
+  }
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
+}
+
+export async function apiDelete(path) {
+  const headers = getAuthHeaders()
+  const res = await fetch(`${AUCTION_API_BASE}${path}`, { method: "DELETE", headers })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
+}
