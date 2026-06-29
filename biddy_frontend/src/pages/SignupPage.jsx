@@ -73,14 +73,19 @@ export default function SignupPage() {
       return
     }
 
+    const normalizedPhone = form.phone.replaceAll("-", "")
+    if (!normalizedPhone) {
+      setError("전화번호를 입력해 주세요.")
+      return
+    }
+
     setSubmitting(true)
     try {
-      const normalizedPhone = form.phone.replaceAll("-", "")
       await signup({
         email: form.email,
         password: form.password,
         nickname: form.nickname,
-        phone: normalizedPhone || undefined,
+        phone: normalizedPhone,
       })
       navigate("/login", {
         replace: true,
@@ -190,14 +195,15 @@ export default function SignupPage() {
             />
           </Field>
 
-          <Field label="전화번호" hint="숫자만 입력 가능">
+          <Field label="전화번호" required hint="숫자만 입력 가능">
             <TextInput
               value={form.phone}
               onChange={update("phone")}
               inputMode="numeric"
               autoComplete="tel"
               placeholder="01012345678"
-              pattern="\\d{10,11}"
+              pattern="\d{10,11}"
+              required
             />
           </Field>
 
