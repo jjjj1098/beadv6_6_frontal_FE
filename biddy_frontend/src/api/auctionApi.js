@@ -41,7 +41,7 @@ export async function closeAuction(auctionId) {
 export async function findAuctionByProductId(productId) {
   const data = await apiGet(`/auctions?page=0&size=100`)
   const match = data?.content?.find((a) => String(a.productId) === String(productId))
-  return match || null
+  return match?.auctionId || null
 }
 
 // 경매 상품 등록은 Product API 사용

@@ -4,8 +4,10 @@ import { Plus, Heart } from "lucide-react"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchProducts, deleteProduct } from "../api/productApi"
+import { fetchAuctionFeed } from "../api/auctionApi"
 import { fetchMemberNickname } from "../api/memberApi"
 import { useAuth } from "../contexts/AuthContext"
+import { AuctionFeedInline } from "./AuctionFeedPage"
 
 const SALE_TYPES = [
   { key: "all", label: "전체" },
@@ -21,6 +23,8 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const [auctionMap, setAuctionMap] = useState({})
+
   const load = async () => {
     setLoading(true)
     setError(null)
@@ -33,6 +37,16 @@ export default function ProductListPage() {
         })
       )
       setItems(productsWithNickname)
+      // 경매 상품이 있으면 auctionId 매핑
+      const hasAuction = productsWithNickname.some((p) => p.type === "auction")
+      if (hasAuction) {
+        try {
+          const auctionData = await fetchAuctionFeed({ size: 200 })
+          const map = {}
+          ;(auctionData?.content || []).forEach((a) => { map[String(a.productId)] = a.auctionId })
+          setAuctionMap(map)
+        } catch {}
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -95,6 +109,11 @@ export default function ProductListPage() {
         </div>
       </div>
 
+      {saleType === "auction" ? (
+        <div className="mt-4 px-4 pb-24">
+          <AuctionFeedInline />
+        </div>
+      ) : (
       <div className="mt-4 grid grid-cols-1 gap-3 px-4 pb-24 lg:grid-cols-3 xl:grid-cols-4">
         {loading ? (
           <p className="col-span-full py-10 text-center text-sm text-muted-foreground">불러오는 중...</p>
@@ -145,7 +164,13 @@ export default function ProductListPage() {
 
               <div className={`mt-2 grid gap-2 ${Number(p.sellerId) === Number(user?.id) ? "grid-cols-3" : "grid-cols-1"}`}>
                 <button
-                  onClick={() => navigate(`/products/${p.id}`)}
+                  onClick={() => {
+                    if (p.type === "auction" && auctionMap[String(p.id)]) {
+                      navigate(`/auctions/${auctionMap[String(p.id)]}`)
+                    } else {
+                      navigate(`/products/${p.id}`)
+                    }
+                  }}
                   className="h-10 rounded-xl bg-card text-xs font-semibold text-foreground ring-1 ring-border"
                 >상세</button>
                 {Number(p.sellerId) === Number(user?.id) && (
@@ -166,6 +191,7 @@ export default function ProductListPage() {
           ))
         )}
       </div>
+      )}
 
       <button
         onClick={() => navigate("/products/create")}
