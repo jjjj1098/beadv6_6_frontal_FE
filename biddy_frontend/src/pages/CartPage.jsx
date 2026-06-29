@@ -40,6 +40,7 @@ export default function CartPage() {
                 qty: 1,
                 image: product.image || null,
                 createdAt: item.createdAt,
+                stock: product.stock ?? 0,
               }
             } catch (err) {
               console.error(`상품 정보 로드 실패 (${item.productId}):`, err)
@@ -52,12 +53,13 @@ export default function CartPage() {
                 image: null,
                 createdAt: item.createdAt,
                 error: true,
+                stock: 0,
               }
             }
           })
         )
         setItems(resolvedItems)
-        setSelected(Object.fromEntries(resolvedItems.map((i) => [i.id, true])))
+        setSelected(Object.fromEntries(resolvedItems.map((i) => [i.id, i.stock > 0])))
       } catch (err) {
         console.error("장바구니 로드 실패:", err)
       } finally {
@@ -68,15 +70,35 @@ export default function CartPage() {
     loadCartData()
   }, [])
 
-  const toggle = (id) => setSelected((s) => ({ ...s, [id]: !s[id] }))
-  const allChecked = items.length > 0 && items.every((i) => selected[i.id])
+  const toggle = (id) => {
+    const item = items.find((i) => i.id === id)
+    if (item && (item.stock ?? 0) <= 0) {
+      showToast({ message: "품절된 상품은 주문할 수 없습니다.", type: "warning" })
+      return
+    }
+    setSelected((s) => ({ ...s, [id]: !s[id] }))
+  }
+  const allChecked = items.length > 0 && items.filter((i) => (i.stock ?? 0) > 0).every((i) => selected[i.id])
   const toggleAll = () => {
     const next = !allChecked
-    setSelected(Object.fromEntries(items.map((i) => [i.id, next])))
+    setSelected(Object.fromEntries(items.map((i) => [i.id, (i.stock ?? 0) > 0 ? next : false])))
   }
 
   const setQty = (id, delta) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)))
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id === id) {
+          const nextQty = i.qty + delta
+          if (nextQty < 1) return i
+          if (nextQty > (i.stock ?? 0)) {
+            showToast({ message: `더 이상 수량을 늘릴 수 없습니다. (남은 재고: ${i.stock ?? 0}개)`, type: "warning" })
+            return i
+          }
+          return { ...i, qty: nextQty }
+        }
+        return i
+      })
+    )
 
   const remove = async (id) => {
     const confirmed = await confirmDialog({
@@ -121,9 +143,70 @@ export default function CartPage() {
   const selectedItems = items.filter((i) => selected[i.id])
   const total = selectedItems.reduce((sum, i) => sum + i.price * i.qty, 0)
 
-  const handleCreateOrder = () => {
+  const handleCreateOrder = async () => {
     if (selectedItems.length === 0) return
-    navigate("/orders", { state: { items: selectedItems, total } })
+
+    try {
+      // 실시간 재고 정보 조회
+      const stockChecks = await Promise.all(
+        selectedItems.map(async (item) => {
+          const product = await fetchProductById(item.productId)
+          return {
+            ...item,
+            latestStock: product ? (product.stock ?? 0) : 0
+          }
+        })
+      )
+
+      // 재고가 부족한 상품 검출
+      const insufficientItems = stockChecks.filter(item => item.qty > item.latestStock)
+
+      if (insufficientItems.length > 0) {
+        const firstBad = insufficientItems[0]
+        if (firstBad.latestStock === 0) {
+          showToast({
+            message: `[${firstBad.title}] 상품이 품절되었습니다.`,
+            type: "error"
+          })
+        } else {
+          showToast({
+            message: `[${firstBad.title}] 상품의 재고가 부족합니다. (주문 수량: ${firstBad.qty}개, 현재 재고: ${firstBad.latestStock}개)`,
+            type: "error"
+          })
+        }
+
+        // 실시간 재고 정보를 로컬 상태에 동기화 및 수량 보정
+        setItems((prev) =>
+          prev.map((i) => {
+            const check = stockChecks.find(c => c.id === i.id)
+            if (check) {
+              const newStock = check.latestStock
+              const newQty = Math.max(1, Math.min(i.qty, newStock))
+              return { ...i, stock: newStock, qty: newStock > 0 ? newQty : i.qty }
+            }
+            return i
+          })
+        )
+
+        // 품절된 경우 선택 해제
+        setSelected((s) => {
+          const next = { ...s }
+          stockChecks.forEach(c => {
+            if (c.latestStock <= 0) {
+              next[c.id] = false
+            }
+          })
+          return next
+        })
+
+        return
+      }
+
+      navigate("/orders", { state: { items: selectedItems, total } })
+    } catch (err) {
+      console.error("재고 확인 중 오류 발생:", err)
+      showToast({ message: "재고 확인 중 오류가 발생했습니다. 다시 시도해 주세요.", type: "error" })
+    }
   }
 
   if (loading) {
@@ -183,9 +266,10 @@ export default function CartPage() {
           <li key={item.id} className="flex gap-3 rounded-2xl bg-card p-3 ring-1 ring-border">
             <input
               type="checkbox"
-              checked={!!selected[item.id]}
+              checked={!!selected[item.id] && (item.stock ?? 0) > 0}
+              disabled={(item.stock ?? 0) <= 0}
               onChange={() => toggle(item.id)}
-              className="mt-1 h-4 w-4 accent-[#10b3b6]"
+              className="mt-1 h-4 w-4 accent-[#10b3b6] disabled:opacity-50"
               aria-label="상품 선택"
             />
             <img
@@ -200,16 +284,29 @@ export default function CartPage() {
                   <Trash2 size={16} />
                 </button>
               </div>
-              <PriceText value={item.price} size="md" className="mt-1 text-foreground" />
-              <div className="mt-auto flex items-center gap-2 self-end rounded-lg ring-1 ring-border">
-                <button onClick={() => setQty(item.id, -1)} aria-label="수량 감소" className="grid h-7 w-7 place-items-center text-muted-foreground">
-                  <Minus size={14} />
-                </button>
-                <span className="min-w-5 text-center text-sm font-semibold">{item.qty}</span>
-                <button onClick={() => setQty(item.id, 1)} aria-label="수량 증가" className="grid h-7 w-7 place-items-center text-muted-foreground">
-                  <Plus size={14} />
-                </button>
+              <div className="mt-1 flex items-center justify-between">
+                <PriceText value={item.price} size="md" className="text-foreground" />
+                {(item.stock ?? 0) > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    재고 {(item.stock ?? 0)}개
+                  </span>
+                )}
               </div>
+              {(item.stock ?? 0) > 0 ? (
+                <div className="mt-auto flex items-center gap-2 self-end rounded-lg ring-1 ring-border">
+                  <button onClick={() => setQty(item.id, -1)} disabled={item.qty <= 1} aria-label="수량 감소" className="grid h-7 w-7 place-items-center text-muted-foreground disabled:opacity-30">
+                    <Minus size={14} />
+                  </button>
+                  <span className="min-w-5 text-center text-sm font-semibold">{item.qty}</span>
+                  <button onClick={() => setQty(item.id, 1)} disabled={item.qty >= (item.stock ?? 0)} aria-label="수량 증가" className="grid h-7 w-7 place-items-center text-muted-foreground disabled:opacity-30">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              ) : (
+                <span className="mt-auto self-end text-xs font-semibold text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md">
+                  품절
+                </span>
+              )}
             </div>
           </li>
         ))}

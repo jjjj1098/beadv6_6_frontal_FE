@@ -31,8 +31,10 @@ function unwrapApiResponse(response) {
 }
 
 // 특정 회원의 예치금 조회 (관리자)
+// adjustMemberDeposit과 동일하게 조회 대상 회원을 userId 쿼리 파라미터로 전달한다
+// (경로에 memberId를 직접 끼워 넣는 방식의 엔드포인트는 존재하지 않아 조회가 실패하고 있었음)
 export async function getMemberDeposit(memberId) {
-  return unwrapApiResponse(await apiRequest(`/payments/deposits/${memberId}/balance`))
+  return unwrapApiResponse(await apiRequest(`/payments/deposits/balance?userId=${memberId}`))
 }
 
 // 특정 회원의 예치금 강제 조정 (관리자)
