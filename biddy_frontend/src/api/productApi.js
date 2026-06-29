@@ -23,6 +23,15 @@ function toView(p) {
       rating: 0,
       deals: 0,
     },
+    auction: p.saleType === "AUCTION" ? {
+      startPrice: p.startPrice,
+      bidUnit: p.minIncrement,
+      startsAt: p.startsAt,
+      endAt: p.endsAt,
+      currentBid: p.startPrice ?? 0,
+      bidCount: 0,
+      buyNowPrice: null,
+    } : undefined,
   }
 }
 
@@ -37,6 +46,11 @@ function toCreatePayload(form) {
     category: form.category,
     brand: form.brand ?? "",
     saleType: form.type === "auction" ? "AUCTION" : "NORMAL",
+    // 경매 전용
+    startPrice: form.startPrice ?? undefined,
+    minIncrement: form.minIncrement ?? undefined,
+    startsAt: form.startsAt ?? undefined,
+    endsAt: form.endsAt ?? undefined,
   }
 }
 
