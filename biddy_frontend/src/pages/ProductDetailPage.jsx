@@ -6,7 +6,7 @@ import PageContainer from "../components/PageContainer"
 import StatusBadge from "../components/StatusBadge"
 import PriceText from "../components/PriceText"
 import { fetchProductById, fetchIsLiked, likeProduct, unlikeProduct } from "../api/productApi"
-import { placeBid } from "../api/auctionApi"
+import { placeBid, findAuctionByProductId } from "../api/auctionApi"
 import { addToCart } from "../api/cartApi"
 import { formatKRW, timeLeft } from "../lib/format"
 import { useAuth } from "../contexts/AuthContext"
@@ -234,6 +234,13 @@ export default function ProductDetailPage() {
     setLoading(true)
     fetchProductById(id).then(async (data) => {
       if (!active || !data) return
+      // 경매 상품이면 경매 상세 페이지로 리다이렉트
+      if (data.type === "auction") {
+        try {
+          const auctionId = await findAuctionByProductId(data.id)
+          if (auctionId) { navigate(`/auctions/${auctionId}`, { replace: true }); return }
+        } catch {}
+      }
       const nickname = await fetchMemberNickname(data.sellerId).catch(() => null)
       if (active) {
         setProduct({
