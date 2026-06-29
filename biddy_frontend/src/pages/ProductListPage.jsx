@@ -23,6 +23,8 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const [auctionMap, setAuctionMap] = useState({})
+
   const load = async () => {
     setLoading(true)
     setError(null)
@@ -35,6 +37,16 @@ export default function ProductListPage() {
         })
       )
       setItems(productsWithNickname)
+      // 경매 상품이 있으면 auctionId 매핑
+      const hasAuction = productsWithNickname.some((p) => p.type === "auction")
+      if (hasAuction) {
+        try {
+          const auctionData = await fetchAuctionFeed({ size: 200 })
+          const map = {}
+          ;(auctionData?.content || []).forEach((a) => { map[String(a.productId)] = a.auctionId })
+          setAuctionMap(map)
+        } catch {}
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -152,7 +164,13 @@ export default function ProductListPage() {
 
               <div className={`mt-2 grid gap-2 ${Number(p.sellerId) === Number(user?.id) ? "grid-cols-3" : "grid-cols-1"}`}>
                 <button
-                  onClick={() => navigate(`/products/${p.id}`)}
+                  onClick={() => {
+                    if (p.type === "auction" && auctionMap[String(p.id)]) {
+                      navigate(`/auctions/${auctionMap[String(p.id)]}`)
+                    } else {
+                      navigate(`/products/${p.id}`)
+                    }
+                  }}
                   className="h-10 rounded-xl bg-card text-xs font-semibold text-foreground ring-1 ring-border"
                 >상세</button>
                 {Number(p.sellerId) === Number(user?.id) && (
