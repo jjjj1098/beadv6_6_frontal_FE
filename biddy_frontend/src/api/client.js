@@ -1,7 +1,6 @@
 export const API_BASE_URL = "http://localhost:8000/api"
 
-// Builds the headers for an authenticated request.
-// JWT will be stored in localStorage under `accessToken` once auth is wired up.
+
 export function getAuthHeaders(extra = {}) {
   const token = typeof window !== "undefined" ? window.localStorage.getItem("accessToken") : null
   return {
@@ -29,7 +28,7 @@ export async function apiRequest(path, options = {}) {
   console.log("[apiRequest] →", method, url, "origin:", window.location.origin)
 
   const res = await fetch(url, fetchOptions)
-  
+
   console.log("[apiRequest] ←", res.status, [...res.headers.entries()])
 
   const text = await res.text()
