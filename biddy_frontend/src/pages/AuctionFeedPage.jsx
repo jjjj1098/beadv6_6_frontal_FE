@@ -58,7 +58,8 @@ export default function AuctionFeedPage() {
   const [sort, setSort] = useState("latest")
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    const token = window.localStorage.getItem("accessToken")
+    if (!token) return
     fetchMyWatches().then((data) => {
       if (data?.content) setWatchedIds(new Set(data.content.map((w) => w.auctionId)))
     }).catch(() => {})
@@ -125,7 +126,8 @@ export function AuctionFeedInline() {
   const [sort, setSort] = useState("latest")
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    const token = window.localStorage.getItem("accessToken")
+    if (!token) return
     fetchMyWatches().then((data) => {
       if (data?.content) setWatchedIds(new Set(data.content.map((w) => w.auctionId)))
     }).catch(() => {})
