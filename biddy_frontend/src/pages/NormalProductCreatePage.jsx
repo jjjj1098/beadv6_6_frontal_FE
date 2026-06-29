@@ -28,6 +28,10 @@ export default function NormalProductCreatePage() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
+    if (Number(form.stock) < 1) {
+      alert("재고 수량은 1 이상이어야 합니다.")
+      return
+    }
     setSubmitting(true)
     try {
       const created = await createNormalProduct({

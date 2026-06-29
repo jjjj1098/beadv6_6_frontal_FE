@@ -70,7 +70,8 @@ export default function AuctionProductCreatePage() {
       if (imageFiles.length > 0) {
         await uploadProductImages(created.id, imageFiles)
       }
-      navigate("/")
+      alert("경매 상품 등록 성공!")
+      navigate("/products")
     } catch (err) {
       setSubmitError(err.message || "등록에 실패했습니다")
     } finally {

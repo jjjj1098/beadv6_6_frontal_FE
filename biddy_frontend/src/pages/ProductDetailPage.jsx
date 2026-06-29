@@ -133,13 +133,14 @@ function NormalDetail({ product, isOwner }) {
 }
 
 function AuctionDetail({ product }) {
-  const a = product.auction
-  const [currentBid, setCurrentBid] = useState(a.currentBid)
-  const [bidCount, setBidCount] = useState(a.bidCount)
-  const [remaining, setRemaining] = useState(timeLeft(a.endAt))
+  const a = product.auction ?? {}
+  const [currentBid, setCurrentBid] = useState(a.currentBid ?? 0)
+  const [bidCount, setBidCount] = useState(a.bidCount ?? 0)
+  const [remaining, setRemaining] = useState(timeLeft(a.endAt ?? null))
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    if (!a.endAt) return
     const t = setInterval(() => setRemaining(timeLeft(a.endAt)), 1000)
     return () => clearInterval(t)
   }, [a.endAt])
