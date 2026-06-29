@@ -115,12 +115,6 @@ export default function PaymentSuccessPage() {
                 <span className="text-muted-foreground">결제 금액</span>
                 <span className="font-bold text-[#10b3b6]">{formatKRW(Number(amountStr))}</span>
               </div>
-              {paymentKey && (
-                <div className="flex flex-col gap-1 py-2 text-xs">
-                  <span className="text-muted-foreground">결제 키</span>
-                  <span className="text-foreground break-all bg-muted p-1.5 rounded">{paymentKey}</span>
-                </div>
-              )}
             </div>
 
             <button
