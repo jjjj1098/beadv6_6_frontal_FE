@@ -236,10 +236,6 @@ export default function ProductDetailPage() {
       if (!active || !data) return
       const nickname = await fetchMemberNickname(data.sellerId).catch(() => null)
       if (active) {
-        if (data?.type === "auction") {
-          navigate("/auctions", { replace: true })
-          return
-        }
         setProduct({
           ...data,
           seller: { ...data.seller, name: nickname || data.seller.name },
@@ -250,7 +246,7 @@ export default function ProductDetailPage() {
     return () => {
       active = false
     }
-  }, [id, navigate])
+  }, [id])
 
   return (
     <PageContainer noPadX>
