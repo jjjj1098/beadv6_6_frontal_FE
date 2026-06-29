@@ -6,11 +6,13 @@ import ImageUploader from "../components/ImageUploader"
 import { Field, TextInput, TextArea, Select } from "../components/FormField"
 import { CATEGORIES } from "../api/mockData"
 import { createNormalProduct, uploadProductImages } from "../api/productApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 const CONDITIONS = ["새 상품", "거의 새것", "사용감 적음", "사용감 있음"]
 
 export default function NormalProductCreatePage() {
   const navigate = useNavigate()
+  const { showToast } = useFeedback()
   const [form, setForm] = useState({
     title: "",
     category: "전자기기",
@@ -40,10 +42,10 @@ export default function NormalProductCreatePage() {
       if (imageFiles.length > 0) {
         await uploadProductImages(created.id, imageFiles)
       }
-      alert("등록 성공!")
+      showToast({ message: "상품이 등록되었습니다.", type: "success" })
       navigate("/products")
     } catch (err) {
-      alert("등록 실패: " + err.message)
+      showToast({ message: "등록 실패: " + err.message, type: "error" })
     } finally {
       setSubmitting(false)
     }

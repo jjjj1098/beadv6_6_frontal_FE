@@ -3,10 +3,12 @@ import { useParams, useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import PageContainer from "../components/PageContainer"
 import { fetchProductById, updateProduct } from "../api/productApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 export default function ProductEditPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useFeedback()
   const [form, setForm] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -37,10 +39,10 @@ export default function ProductEditPage() {
         price: Number(form.price),
         stock: Number(form.stock),
       })
-      alert("수정 성공!")
+      showToast({ message: "상품이 수정되었습니다.", type: "success" })
       navigate("/products")
     } catch (err) {
-      alert("수정 실패: " + err.message)
+      showToast({ message: "수정 실패: " + err.message, type: "error" })
     } finally {
       setSubmitting(false)
     }

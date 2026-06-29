@@ -7,9 +7,11 @@ import PriceText from "../components/PriceText"
 import { formatKRW } from "../lib/format"
 import { fetchCart, removeCartItem, cleanCart } from "../api/cartApi"
 import { fetchProductById } from "../api/productApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 export default function CartPage() {
   const navigate = useNavigate()
+  const { showToast, confirmDialog } = useFeedback()
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
   const [loading, setLoading] = useState(true)
@@ -77,7 +79,13 @@ export default function CartPage() {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)))
 
   const remove = async (id) => {
-    if (!window.confirm("해당 상품을 장바구니에서 삭제하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "장바구니 상품 삭제",
+      message: "해당 상품을 장바구니에서 삭제하시겠습니까?",
+      confirmText: "삭제",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await removeCartItem(id)
       setItems((prev) => prev.filter((i) => i.id !== id))
@@ -86,19 +94,27 @@ export default function CartPage() {
         delete next[id]
         return next
       })
+      showToast({ message: "장바구니에서 삭제되었습니다.", type: "success" })
     } catch (err) {
-      alert("상품 삭제에 실패했습니다: " + err.message)
+      showToast({ message: "상품 삭제에 실패했습니다: " + err.message, type: "error" })
     }
   }
 
   const handleCleanCart = async () => {
-    if (!window.confirm("장바구니를 완전히 비우시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "장바구니 비우기",
+      message: "장바구니를 완전히 비우시겠습니까?",
+      confirmText: "비우기",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await cleanCart()
       setItems([])
       setSelected({})
+      showToast({ message: "장바구니를 비웠습니다.", type: "success" })
     } catch (err) {
-      alert("장바구니 비우기에 실패했습니다: " + err.message)
+      showToast({ message: "장바구니 비우기에 실패했습니다: " + err.message, type: "error" })
     }
   }
 

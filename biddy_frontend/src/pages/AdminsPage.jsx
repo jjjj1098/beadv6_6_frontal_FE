@@ -8,6 +8,7 @@ import {
   getMemberDeposit,
   adjustMemberDeposit,
 } from "../api/adminApi"
+import { useFeedback } from "../contexts/FeedbackContext"
 
 const TABS = [
   { key: "withdrawals", label: "탈퇴 관리" },
@@ -15,6 +16,7 @@ const TABS = [
 ]
 
 export default function AdminPage() {
+  const { showToast, confirmDialog } = useFeedback()
   const [tab, setTab] = useState("withdrawals")
   const [members, setMembers] = useState([])
   const [withdrawals, setWithdrawals] = useState([])
@@ -63,19 +65,20 @@ export default function AdminPage() {
   const handleAdjustSubmit = async (memberId) => {
     const amount = Number(adjustAmount)
     if (!amount) {
-      alert("조정 금액을 입력해주세요. (양수: 충전, 음수: 차감)")
+      showToast({ message: "조정 금액을 입력해주세요. (양수: 충전, 음수: 차감)", type: "error" })
       return
     }
     if (!adjustReason.trim()) {
-      alert("조정 사유를 입력해주세요.")
+      showToast({ message: "조정 사유를 입력해주세요.", type: "error" })
       return
     }
     try {
       const result = await adjustMemberDeposit(memberId, { amount, reason: adjustReason.trim() })
       setDeposits((prev) => ({ ...prev, [memberId]: result?.balance ?? prev[memberId] }))
       closeAdjust()
+      showToast({ message: "예치금이 조정되었습니다.", type: "success" })
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
@@ -94,22 +97,36 @@ export default function AdminPage() {
   }, [tab])
 
   const handleApprove = async (memberId) => {
-    if (!window.confirm("탈퇴를 승인하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "탈퇴 승인",
+      message: "탈퇴를 승인하시겠습니까?",
+      confirmText: "승인",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await approveWithdrawal(memberId)
+      showToast({ message: "탈퇴를 승인했습니다.", type: "success" })
       loadWithdrawals()
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 
   const handleBan = async (memberId) => {
-    if (!window.confirm("이 회원을 추방하시겠습니까?")) return
+    const confirmed = await confirmDialog({
+      title: "회원 추방",
+      message: "이 회원을 추방하시겠습니까?",
+      confirmText: "추방",
+      variant: "danger",
+    })
+    if (!confirmed) return
     try {
       await banMember(memberId)
+      showToast({ message: "회원을 추방했습니다.", type: "success" })
       loadMembers()
     } catch (err) {
-      alert(err.message)
+      showToast({ message: err.message, type: "error" })
     }
   }
 

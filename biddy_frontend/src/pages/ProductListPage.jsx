@@ -9,6 +9,7 @@ import { fetchProducts, deleteProduct } from "../api/productApi"
 import { fetchAuctionFeed, fetchMyWatches, findAuctionByProductId } from "../api/auctionApi"
 import { fetchMemberNickname } from "../api/memberApi"
 import { useAuth } from "../contexts/AuthContext"
+import { useFeedback } from "../contexts/FeedbackContext"
 import { timeLeft } from "../lib/format"
 
 const SALE_TYPES = [
@@ -123,15 +124,27 @@ function AuctionFeedInline() {
 export default function ProductListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { showToast, confirmDialog } = useFeedback()
   const [saleType, setSaleType] = useState("all")
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const handleDelete = async (id) => {
-    if (!confirm("이 상품을 삭제할까요?")) return
-    try { await deleteProduct(id); load() }
-    catch (err) { alert("삭제 실패: " + err.message) }
+    const confirmed = await confirmDialog({
+      title: "상품 삭제",
+      message: "이 상품을 삭제할까요?",
+      confirmText: "삭제",
+      variant: "danger",
+    })
+    if (!confirmed) return
+    try {
+      await deleteProduct(id)
+      showToast({ message: "상품이 삭제되었습니다.", type: "success" })
+      load()
+    } catch (err) {
+      showToast({ message: "삭제 실패: " + err.message, type: "error" })
+    }
   }
 
   const load = async () => {
