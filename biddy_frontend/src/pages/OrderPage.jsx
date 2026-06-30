@@ -399,6 +399,17 @@ export default function OrderPage({ embedded = false }) {
                 <span className="text-xs text-muted-foreground">결제 금액</span>
                 <span className="text-sm font-bold text-foreground">{formatKRW(order.totalPrice || order.amount || 0)}</span>
               </div>
+              {order.status === "PENDING" && (
+                <div className="mt-3 flex justify-end border-t border-border pt-3">
+                  <button
+                    onClick={() => handlePayExistingOrder(order)}
+                    disabled={submitting}
+                    className="h-10 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    결제
+                  </button>
+                </div>
+              )}
               {order.status === "PAID" && (
                 <div className="mt-3 flex justify-end border-t border-border pt-3">
                   <button
