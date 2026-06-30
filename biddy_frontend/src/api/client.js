@@ -103,8 +103,12 @@ const AUCTION_API_BASE = "/api/v1"
 export async function apiGet(path) {
   const headers = getAuthHeaders()
   const res = await fetch(`${AUCTION_API_BASE}${path}`, { headers })
-  if (res.status === 401) { window.localStorage.removeItem("accessToken"); return null }
-  if (!res.ok) throw new Error(res.statusText || `HTTP ${res.status}`)
+  if (!res.ok) {
+    const text = await res.text()
+    let msg = res.statusText || `HTTP ${res.status}`
+    try { msg = JSON.parse(text).message || msg } catch {}
+    throw new Error(msg)
+  }
   const text = await res.text()
   return text ? JSON.parse(text) : null
 }

@@ -9,11 +9,11 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api/v1/auctions": {
-        target: "http://localhost:8084",
+        target: "http://localhost:8000",
         changeOrigin: true,
       },
       "/api/v1/members/me": {
-        target: "http://localhost:8084",
+        target: "http://localhost:8000",
         changeOrigin: true,
       },
       "/ws": {
