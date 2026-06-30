@@ -47,17 +47,27 @@ function BidHistoryModal({ auctionId, open, onClose }) {
           <div className="py-8 text-center text-sm text-muted-foreground">입찰 내역이 없습니다</div>
         ) : (
           <div className="max-h-80 space-y-2 overflow-y-auto">
-            {bids.map((bid, i) => (
-              <div key={i} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{names[bid.bidder?.bidderId] || `회원 #${bid.bidder?.bidderId || "?"}`}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {bid.bidAt ? new Date(bid.bidAt).toLocaleString("ko-KR") : ""}
-                  </p>
+            {bids.map((bid, i) => {
+              const nick = names[bid.bidder?.bidderId] || "?"
+              const isTop = i === 0
+              return (
+                <div key={i} className={`flex items-center gap-3 rounded-xl px-3 py-3 ${isTop ? "bg-teal/10 ring-1 ring-teal/30" : "bg-muted"}`}>
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${isTop ? "bg-teal text-white" : "bg-card ring-1 ring-border text-muted-foreground"}`}>
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-sm font-semibold ${isTop ? "text-teal" : "text-foreground"}`}>{nick[0].toUpperCase()}***</span>
+                      {isTop && <span className="rounded bg-teal/20 px-1.5 py-0.5 text-[10px] font-bold text-teal">최고가</span>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {bid.bidAt ? new Date(bid.bidAt).toLocaleString("ko-KR") : ""}
+                    </p>
+                  </div>
+                  <PriceText value={bid.amount} size="sm" className={isTop ? "text-teal font-bold" : "text-foreground"} />
                 </div>
-                <PriceText value={bid.amount} size="sm" className="text-teal" />
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -112,7 +122,7 @@ export default function AuctionDetailPage() {
             .then(setProduct)
             .catch(() => {})
         }
-        const ids = [data.sellerId, data.topBidder?.bidderId].filter(Boolean)
+        const ids = [data.sellerId, data.topBidder?.bidderId, data.winnerId].filter(Boolean)
         if (ids.length) fetchNicknames(ids).then(setNicknames).catch(() => {})
       })
       .catch((err) => { setError(err.message); setLoading(false) })
@@ -336,7 +346,7 @@ export default function AuctionDetailPage() {
         {!isLive && auction.winnerId && (
           <div className="mt-3 rounded-2xl bg-teal/10 p-4 ring-1 ring-teal/30">
             <div className="flex items-center gap-2"><Trophy size={18} className="text-teal" /><span className="text-sm font-bold text-teal">낙찰 완료</span></div>
-            <p className="mt-1 text-sm text-foreground">낙찰자 #{auction.winnerId}</p>
+            <p className="mt-1 text-sm text-foreground">낙찰자: {nicknames[auction.winnerId] || `회원 #${auction.winnerId}`}</p>
             <PriceText value={auction.currentBid} size="lg" className="mt-1 block text-teal" />
           </div>
         )}
