@@ -1,4 +1,7 @@
-export const API_BASE_URL = "http://localhost:8000/api"
+const DEFAULT_API_BASE_URL = "http://localhost:8000/api"
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, "")
+export const API_ORIGIN = API_BASE_URL.replace(/\/api$/, "")
 
 
 export function getAuthHeaders(extra = {}) {
@@ -98,7 +101,7 @@ export async function fetchNicknames(memberIds) {
 }
 
 // Auction Service 전용 API (Gateway 경유, /api/v1 prefix)
-const AUCTION_API_BASE = "/api/v1"
+const AUCTION_API_BASE = (import.meta.env.VITE_AUCTION_API_BASE_URL || `${API_ORIGIN}/api/v1`).replace(/\/$/, "")
 
 export async function apiGet(path) {
   const headers = getAuthHeaders()

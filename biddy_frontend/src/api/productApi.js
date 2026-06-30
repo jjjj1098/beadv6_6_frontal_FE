@@ -1,4 +1,4 @@
-import { apiRequest } from "./client"
+import { API_BASE_URL, apiRequest } from "./client"
 
 // 백엔드(name/saleType) → 화면(title/type) 변환
 function toView(p) {
@@ -148,7 +148,7 @@ export async function uploadProductImages(productId, files) {
   const formData = new FormData()
   files.forEach((file) => formData.append("images", file))
   const token = localStorage.getItem("accessToken")
-  const res = await fetch(`http://localhost:8000/api/products/${productId}/images`, {
+  const res = await fetch(`${API_BASE_URL}/products/${productId}/images`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
