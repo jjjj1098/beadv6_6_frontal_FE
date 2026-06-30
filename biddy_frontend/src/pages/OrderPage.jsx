@@ -112,6 +112,29 @@ export default function OrderPage({ embedded = false }) {
     }
   }
 
+  const handlePayExistingOrder = (order) => {
+    const checkoutItems = (order.orderInfos || []).map((info) => {
+      const product = productsMap[info.productId]
+      return {
+        id: `existing_${info.id}`,
+        productId: info.productId,
+        title: product?.title || "경매 낙찰 상품",
+        price: info.orderPrice,
+        qty: info.quantity,
+        image: product?.image || "/placeholder.svg",
+        sellerId: info.sellerId,
+      }
+    })
+
+    navigate("/orders", {
+      state: {
+        orderId: order.id,
+        items: checkoutItems,
+        total: order.totalPrice,
+      },
+    })
+  }
+
   useEffect(() => {
     if (!checkoutData) return
 
@@ -145,34 +168,43 @@ export default function OrderPage({ embedded = false }) {
     
     setSubmitting(true)
     try {
-      // 1. Build Order Request payload
-      const payload = {
-        items: checkoutData.items.map((item) => ({
-          productId: item.productId,
-          orderPrice: Number(item.price),
-          quantity: Number(item.qty),
-          sellerId: Number(item.sellerId),
-        })),
-      }
+      let orderId = checkoutData.orderId;
 
-      // 2. Create the order in the backend
-      const createdOrder = await createOrder(payload)
+      if (!orderId) {
+        // 1. Build Order Request payload
+        const payload = {
+          items: checkoutData.items.map((item) => ({
+            productId: item.productId,
+            orderPrice: Number(item.price),
+            quantity: Number(item.qty),
+            sellerId: Number(item.sellerId),
+          })),
+        }
+
+        // 2. Create the order in the backend
+        const createdOrder = await createOrder(payload)
+        orderId = createdOrder?.id
+      }
       
-      if (createdOrder && createdOrder.id) {
+      if (orderId) {
         if (paymentMethod === PAYMENT_METHOD.WALLET) {
           await createPayment({
-            orderId: createdOrder.id,
+            orderId: orderId,
             amount,
             paymentMethod: PAYMENT_METHOD.WALLET,
           })
-          // Delete only selected cart items from backend
-          await Promise.all(
-            checkoutData.items.map((item) =>
-              removeCartItem(item.id).catch((err) =>
-                console.error("Failed to remove cart item:", err),
+          
+          if (!checkoutData.orderId) {
+            // Delete only selected cart items from backend for new orders
+            await Promise.all(
+              checkoutData.items.map((item) =>
+                removeCartItem(item.id).catch((err) =>
+                  console.error("Failed to remove cart item:", err),
+                ),
               ),
-            ),
-          )
+            )
+          }
+          
           showToast({ message: "예치금 결제가 완료되었습니다.", type: "success" })
           navigate("/orders", { replace: true })
           return
@@ -180,9 +212,9 @@ export default function OrderPage({ embedded = false }) {
 
         // Combine product titles for order name
         const orderName = checkoutData.items.map((item) => item.title).join(", ")
-        const cartItemIds = checkoutData.items.map((item) => item.id)
+        const cartItemIds = checkoutData.orderId ? [] : checkoutData.items.map((item) => item.id)
         await requestOrderPayment({
-          orderId: createdOrder.id,
+          orderId: orderId,
           amount,
           orderName,
           cartItemIds,
@@ -190,8 +222,8 @@ export default function OrderPage({ embedded = false }) {
       }
       
     } catch (err) {
-      console.error("주문 생성 실패:", err)
-      showToast({ message: "주문 처리에 실패했습니다: " + err.message, type: "error" })
+      console.error("결제 처리 중 에러 발생:", err)
+      showToast({ message: "결제 처리에 실패했습니다: " + err.message, type: "error" })
     } finally {
       setSubmitting(false)
     }
@@ -375,6 +407,17 @@ export default function OrderPage({ embedded = false }) {
                     className="h-10 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     구매확정
+                  </button>
+                </div>
+              )}
+              {order.status === "PENDING" && order.orderType === "AUCTION" && (
+                <div className="mt-3 flex justify-end border-t border-border pt-3">
+                  <button
+                    onClick={() => handlePayExistingOrder(order)}
+                    disabled={submitting}
+                    className="h-10 rounded-xl bg-teal px-4 text-sm font-semibold text-teal-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    결제
                   </button>
                 </div>
               )}
