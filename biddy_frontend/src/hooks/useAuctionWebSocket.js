@@ -13,7 +13,7 @@ export default function useAuctionWebSocket(auctionId) {
     if (!auctionId) return
 
     const client = new Client({
-      brokerURL: "ws://localhost:8084/ws",
+      brokerURL: "ws://43.200.204.191:8084/ws",
       reconnectDelay: 3000,
       onConnect: () => {
         setConnected(true)
