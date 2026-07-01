@@ -5,7 +5,11 @@
       "destination": "http://43.200.204.191:8000/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/images/:path*",
+      "destination": "http://43.200.204.191:8082/images/:path*"
+    },
+    {
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
